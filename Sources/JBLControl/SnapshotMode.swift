@@ -19,6 +19,12 @@ enum SnapshotMode {
                 try? await Task.sleep(for: .seconds(1.5))
             }
             let host = NSHostingView(rootView: PanelView().environment(speaker))
+            if let wait = value(after: "--wait", in: args).flatMap(Double.init) {
+                speaker.panelOpened()
+                try? await Task.sleep(for: .seconds(wait))
+                print("discovered=\(speaker.discovered.map { "\($0.name)@\($0.id.uuidString.prefix(8))" }) "
+                    + "switchable=\(speaker.switchable.count) active=\(speaker.activeID?.uuidString.prefix(8) ?? "-")")
+            }
             if let appearance { host.appearance = NSAppearance(named: appearance == "dark" ? .darkAqua : .aqua) }
             let size = host.fittingSize
             let window = NSPanel(contentRect: NSRect(origin: CGPoint(x: 40, y: 40), size: size),

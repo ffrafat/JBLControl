@@ -129,3 +129,13 @@ import Testing
     #expect(d.feed(packets[1]).isEmpty)
     #expect(d.feed(packets[2]) == [.p4(big)])
 }
+
+// MARK: Speaker identity
+
+@Test func sameSpeakerAcrossRotatedAddressesAndTruncatedNames() {
+    #expect(SpeakerIdentity.matches(name: "FFR JBL Fli", productID: 0x2107, name: "FFR JBL Flip 7", productID: 0x2107))
+    #expect(SpeakerIdentity.matches(name: "FFR JBL Flip 7", productID: nil, name: "FFR JBL Fli", productID: 0x2107))
+    #expect(!SpeakerIdentity.matches(name: "FFR JBL Flip 7", productID: 0x2107, name: "Kitchen", productID: 0x2107))
+    #expect(!SpeakerIdentity.matches(name: "JBL Flip 7", productID: 0x2107, name: "JBL Flip 7", productID: 0x20E3))
+    #expect(!SpeakerIdentity.matches(name: "", productID: 0x2107, name: "JBL Flip 7", productID: 0x2107))
+}

@@ -15,6 +15,10 @@ struct DiscoveredSpeaker: Identifiable {
     var advertisement: [String: String]
     var id: UUID { peripheral.identifier }
     var model: SpeakerModel? { Catalog.model(productID) }
+
+    func isSameSpeaker(as other: DiscoveredSpeaker) -> Bool {
+        SpeakerIdentity.matches(name: name, productID: productID, name: other.name, productID: other.productID)
+    }
 }
 
 /// Owns the BLE link to one JBL speaker and mirrors its state for the UI.
@@ -67,6 +71,7 @@ final class SpeakerManager: NSObject {
     @ObservationIgnored private var connectWatchdog: Task<Void, Never>?
     @ObservationIgnored private var browsing = false
     @ObservationIgnored private var lowBatteryNotified = false
+    @ObservationIgnored private var ignoredAliases: Set<UUID> = []
     @ObservationIgnored private(set) var gattSummary: [String] = []
 
     private struct Outgoing {
@@ -181,6 +186,9 @@ final class SpeakerManager: NSObject {
         peripheral = p
         p.delegate = self
         status = .connecting
+        if let current = discovered.first(where: { $0.id == p.identifier }) {
+            discovered.removeAll { $0.id != p.identifier && $0.isSameSpeaker(as: current) }
+        }
         log.info("connecting to \(p.identifier, privacy: .public)")
         central.connect(p)
         connectWatchdog?.cancel()
@@ -206,8 +214,8 @@ final class SpeakerManager: NSObject {
     private func isRemembered(_ s: DiscoveredSpeaker) -> Bool? {
         let d = UserDefaults.standard
         guard let savedName = d.string(forKey: Saved.name) else { return nil }
-        let savedPID = d.object(forKey: Saved.productID) as? Int
-        return s.name == savedName && (savedPID == nil || s.productID.map(Int.init) == savedPID)
+        let savedPID = (d.object(forKey: Saved.productID) as? Int).map(UInt16.init)
+        return SpeakerIdentity.matches(name: s.name, productID: s.productID, name: savedName, productID: savedPID)
     }
 
     private func clearDeviceState() {
@@ -311,6 +319,14 @@ final class SpeakerManager: NSObject {
         }
     }
 
+    /// Whether a sighting is the speaker we're already connected to, under another address.
+    private func isActiveSpeaker(_ s: DiscoveredSpeaker) -> Bool {
+        guard activeID != nil else { return false }
+        let activeEntry = discovered.first { $0.id == activeID }
+        let candidates = [name, activeEntry?.name, UserDefaults.standard.string(forKey: Saved.name)].compactMap { $0 }
+        return candidates.contains { SpeakerIdentity.matches(name: s.name, productID: s.productID, name: $0, productID: productID) }
+    }
+
     private var autoConnect: Bool { UserDefaults.standard.bool(forKey: Pref.autoConnect) }
 
     /// Notifies once when the level drops to the threshold; re-arms after it recovers a little.
@@ -388,6 +404,19 @@ extension SpeakerManager: @preconcurrency CBCentralManagerDelegate {
         for (key, value) in serviceData { summary["serviceData.\(key.uuidString)"] = value.hex }
         var speaker = DiscoveredSpeaker(peripheral: p, name: advertisedName, productID: pid,
                                         rssi: rssi.intValue, advertisement: summary)
+        if let old = discovered.first(where: { $0.id == p.identifier }) {
+            speaker.productID = pid ?? old.productID
+            if advertisedName.isEmpty { speaker.name = old.name }
+        }
+        // Our connected speaker also advertises under a fresh rotating address: not a second speaker.
+        if status == .connected, p.identifier != activeID, isActiveSpeaker(speaker) {
+            if discovered.contains(where: { $0.id == p.identifier }) || !ignoredAliases.contains(p.identifier) {
+                log.info("\(speaker.name, privacy: .public) is also advertising as \(p.identifier, privacy: .public); same speaker")
+                ignoredAliases.insert(p.identifier)
+            }
+            discovered.removeAll { $0.id == p.identifier }
+            return
+        }
         if let i = discovered.firstIndex(where: { $0.id == p.identifier }) {
             // Advertisement and scan response arrive separately; merge rather than lose fields.
             let old = discovered[i]
@@ -399,6 +428,8 @@ extension SpeakerManager: @preconcurrency CBCentralManagerDelegate {
             log.info("found \(advertisedName, privacy: .public) pid \(pid ?? 0, format: .hex)")
             discovered.append(speaker)
         }
+        // The same speaker seen earlier under an older address: keep only the newest sighting.
+        discovered.removeAll { $0.id != p.identifier && $0.id != activeID && $0.isSameSpeaker(as: speaker) }
 
         // Auto-connect: the remembered speaker, or the first supported one when none is remembered.
         guard autoConnect, status != .connected, peripheral?.identifier != p.identifier,
