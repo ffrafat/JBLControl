@@ -41,7 +41,7 @@ struct EqualizerView: View {
                     }
                     .labelStyle(.titleAndIcon)
                     .font(.caption.weight(.medium))
-                    .buttonStyle(.glass)
+                    .adaptiveGlassButtonStyle()
                     .controlSize(.small)
                 }
             }
@@ -71,7 +71,7 @@ struct EqualizerView: View {
             .foregroundStyle(.secondary)
         }
         .padding(14)
-        .glassEffect(.regular, in: .rect(cornerRadius: 22))
+        .adaptiveGlass(.regular, in: .rect(cornerRadius: 22))
     }
 
     /// Models not yet confirmed on hardware need an explicit opt-in before EQ writes.
@@ -82,7 +82,7 @@ struct EqualizerView: View {
             }
             .help("EQ changes on this model use JBL's protocol but haven't been tested on hardware yet.")
             .font(.caption.weight(.medium))
-            .buttonStyle(.glass)
+            .adaptiveGlassButtonStyle()
             .controlSize(.small)
         }
     }
@@ -160,7 +160,7 @@ struct BandColumn: View {
                         .fill(.white)
                         .frame(width: 18, height: 18)
                         .shadow(color: .black.opacity(0.25), radius: 3, y: 1)
-                        .glassEffect(.regular.interactive(), in: .circle)
+                        .adaptiveGlass(.interactive, in: .circle)
                         .scaleEffect(dragging ? 1.2 : hovering ? 1.08 : 1)
                         .offset(y: valueY - 9)
 
@@ -169,7 +169,7 @@ struct BandColumn: View {
                             .font(.caption2.weight(.semibold).monospacedDigit())
                             .padding(.horizontal, 5)
                             .padding(.vertical, 2)
-                            .glassEffect(.regular, in: .capsule)
+                            .adaptiveGlass(.regular, in: .capsule)
                             .offset(y: max(valueY - 34, -6))
                             .transition(.opacity)
                     }

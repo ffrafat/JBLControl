@@ -8,7 +8,7 @@ struct SpeakerSwitcher: View {
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            GlassEffectContainer(spacing: 6) {
+            AdaptiveGlassContainer(spacing: 6) {
                 HStack(spacing: 6) {
                     ForEach(speaker.switchable) { s in
                         let active = s.id == speaker.activeID
@@ -31,8 +31,8 @@ struct SpeakerSwitcher: View {
                             .contentShape(.capsule)
                         }
                         .buttonStyle(.plain)
-                        .glassEffect(active ? .regular.tint(Theme.accent).interactive() : .regular.interactive(), in: .capsule)
-                        .glassEffectID(s.id, in: glass)
+                        .adaptiveGlass(active ? .tinted(Theme.accent) : .interactive, in: .capsule)
+                        .adaptiveGlassID(s.id, in: glass)
                         .help(s.model.map { "\(s.name) — \($0.name)" } ?? s.name)
                         .accessibilityAddTraits(active ? .isSelected : [])
                     }

@@ -2,37 +2,32 @@ import SwiftUI
 
 @main
 struct JBLControlApp: App {
-    @State private var speaker: SpeakerManager
-    @AppStorage(Pref.showBatteryInMenuBar) private var showBattery = false
+    @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
-    init() {
+    var body: some Scene {
+        // The menu bar item, panel and Settings window are AppKit-managed (see AppDelegate);
+        // SwiftUI needs at least one scene.
+        Settings { EmptyView() }
+    }
+}
+
+@MainActor
+final class AppDelegate: NSObject, NSApplicationDelegate {
+    private let speaker: SpeakerManager
+    private var statusBar: StatusBarController?
+
+    override init() {
         Pref.registerDefaults()
-        let speaker = SpeakerManager()
-        _speaker = State(initialValue: speaker)
+        speaker = SpeakerManager()
+        super.init()
+    }
+
+    func applicationDidFinishLaunching(_ notification: Notification) {
         SnapshotMode.runIfRequested(speaker)
+        statusBar = StatusBarController(speaker: speaker)
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(5))
             UpdateChecker.shared.checkAutomaticallyIfDue()
-        }
-    }
-
-    var body: some Scene {
-        MenuBarExtra {
-            PanelView()
-                .environment(speaker)
-        } label: {
-            let battery = showBattery && speaker.status == .connected ? speaker.battery : nil
-            Image(nsImage: MenuBarIcon.image(connected: speaker.status == .connected,
-                                             battery: battery, charging: speaker.isCharging))
-            if let battery {
-                Text("\(battery)%")
-            }
-        }
-        .menuBarExtraStyle(.window)
-
-        Settings {
-            SettingsView()
-                .environment(speaker)
         }
     }
 }

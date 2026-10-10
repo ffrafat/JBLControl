@@ -3,8 +3,10 @@
 set -euo pipefail
 cd "${0:A:h}/.."
 
-swift build -c release --product JBLControl
-BIN="$(swift build -c release --show-bin-path)/JBLControl"
+# Universal binary: Apple Silicon and Intel.
+ARCHS=(--arch arm64 --arch x86_64)
+swift build -c release --product JBLControl "${ARCHS[@]}"
+BIN="$(swift build -c release "${ARCHS[@]}" --show-bin-path)/JBLControl"
 
 APP=build/JBLControl.app
 rm -rf "$APP"
@@ -15,7 +17,7 @@ cp Resources/Info.plist "$APP/Contents/Info.plist"
 # actool resolves relative paths against $PWD, which can be stale; pass absolute ones.
 xcrun actool "$(pwd -P)/Resources/Assets.xcassets" "$(pwd -P)/Resources/AppIcon.icon" \
   --compile "$(pwd -P)/$APP/Contents/Resources" --platform macosx \
-  --minimum-deployment-target 26.0 --app-icon AppIcon --accent-color AccentColor \
+  --minimum-deployment-target 14.0 --app-icon AppIcon --accent-color AccentColor \
   --output-partial-info-plist "$(mktemp -d)/icon.plist" >/dev/null
 # A real identity keeps the code requirement stable, so macOS remembers the Bluetooth
 # permission across rebuilds. Falls back to ad-hoc signing when none is available.

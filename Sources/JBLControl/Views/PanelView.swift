@@ -16,7 +16,7 @@ struct PanelView: View {
         VStack(spacing: 14) {
             if showSwitcher {
                 SpeakerSwitcher()
-                    .transition(.opacity.combined(with: .move(edge: .top)))
+                    .transition(.opacity)
             }
             HeaderView()
             if let model = speaker.model, model.hasEQ {
@@ -28,7 +28,7 @@ struct PanelView: View {
                 if speaker.isCustomActive || model.pickerPresets.count <= 1 {
                     EqualizerView()
                         .disabled(!ready)
-                        .transition(.opacity.combined(with: .move(edge: .top)))
+                        .transition(.opacity)
                 }
             } else if speaker.status == .connected {
                 NoEQNotice()
@@ -37,6 +37,9 @@ struct PanelView: View {
         }
         .padding(16)
         .frame(width: 360)
+        // A fixed (ideal) height lets the menu bar window shrink back when the equalizer
+        // hides; without it the window keeps its larger size and shows blank space.
+        .fixedSize(horizontal: false, vertical: true)
         .background(alignment: .top) { ambientGlow }
         .overlay(alignment: .bottom) {
             if let toast {
@@ -44,7 +47,7 @@ struct PanelView: View {
                     .font(.caption.weight(.medium))
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
-                    .glassEffect(.regular, in: .capsule)
+                    .adaptiveGlass(.regular, in: .capsule)
                     .padding(.bottom, 56)
                     .transition(.opacity.combined(with: .scale(scale: 0.9)))
             }
@@ -53,8 +56,7 @@ struct PanelView: View {
         .animation(.smooth, value: showSwitcher)
         .animation(.smooth(duration: 0.3), value: speaker.isCustomActive)
         .tint(Theme.accent)
-        .onAppear { speaker.panelOpened() }
-        .onDisappear { speaker.panelClosed() }
+
     }
 
     /// Soft sunset wash behind the glass, so the glass has something to refract.
@@ -85,13 +87,12 @@ struct NoEQNotice: View {
         }
         .frame(maxWidth: .infinity)
         .padding(16)
-        .glassEffect(.regular, in: .rect(cornerRadius: 22))
+        .adaptiveGlass(.regular, in: .rect(cornerRadius: 22))
     }
 }
 
 struct FooterView: View {
     @Environment(SpeakerManager.self) private var speaker
-    @Environment(\.openSettings) private var openSettings
     @Binding var toast: String?
 
     var body: some View {
@@ -106,9 +107,7 @@ struct FooterView: View {
             // so this pops a plain NSMenu at the pointer instead.
             Button {
                 MoreMenu.show(speaker, openSettings: {
-                    // A menu bar app isn't frontmost; bring the Settings window forward.
-                    NSApp.activate()
-                    openSettings()
+                    SettingsWindowController.shared.show(speaker)
                 }) { message in
                     toast = message
                     Task {
@@ -123,7 +122,9 @@ struct FooterView: View {
                     .contentShape(.circle)
             }
             .buttonStyle(.plain)
-            .glassEffect(.regular.interactive(), in: .circle)
+            .adaptiveGlass(.interactive, in: .circle)
+            // It's the first focusable control; without this, macOS 14–15 draws a focus ring around it.
+            .focusEffectDisabled()
             .help("More")
         }
     }

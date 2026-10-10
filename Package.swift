@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "JBLControl",
-    platforms: [.macOS(.v26)],
+    platforms: [.macOS(.v14)],
     products: [
         .executable(name: "JBLControl", targets: ["JBLControl"]),
         .library(name: "JBLControlKit", targets: ["JBLControlKit"]),

@@ -2,33 +2,48 @@ import AppKit
 import JBLControlKit
 import SwiftUI
 
-struct SettingsView: View {
-    enum Tab: Hashable { case general, speaker, updates, about }
-    @State private var tab: Tab = .general
+/// Settings in a native toolbar-tab window. Built in AppKit because the panel lives in a
+/// popover outside SwiftUI's scenes, where SwiftUI's `openSettings` isn't available.
+@MainActor
+final class SettingsWindowController {
+    static let shared = SettingsWindowController()
+    private var window: NSWindow?
 
-    var body: some View {
-        TabView(selection: $tab) {
-            GeneralSettings()
-                .tabItem { Label("General", systemImage: "gearshape") }
-                .tag(Tab.general)
-            SpeakerSettings()
-                .tabItem { Label("Speaker", systemImage: "hifispeaker") }
-                .tag(Tab.speaker)
-            UpdateSettings()
-                .tabItem { Label("Updates", systemImage: "arrow.down.circle") }
-                .tag(Tab.updates)
-            AboutSettings()
-                .tabItem { Label("About", systemImage: "info.circle") }
-                .tag(Tab.about)
+    func show(_ speaker: SpeakerManager) {
+        if window == nil { window = makeWindow(speaker) }
+        NSApp.activate()
+        window?.makeKeyAndOrderFront(nil)
+    }
+
+    private func makeWindow(_ speaker: SpeakerManager) -> NSWindow {
+        let tabs = NSTabViewController()
+        tabs.tabStyle = .toolbar
+        tabs.transitionOptions = [.allowUserInteraction]
+        func add<V: View>(_ title: String, _ symbol: String, _ view: V) {
+            let host = NSHostingController(rootView: view.environment(speaker).tint(Theme.accent).frame(width: 480))
+            host.sizingOptions = [.preferredContentSize]
+            let item = NSTabViewItem(viewController: host)
+            item.label = title
+            item.image = NSImage(systemSymbolName: symbol, accessibilityDescription: title)
+            tabs.addTabViewItem(item)
         }
-        .tint(Theme.accent)
-        .frame(width: 480)
+        add("General", "gearshape", GeneralSettings())
+        add("Speaker", "hifispeaker", SpeakerSettings())
+        add("Updates", "arrow.down.circle", UpdateSettings())
+        add("About", "info.circle", AboutSettings())
+
+        let window = NSWindow(contentViewController: tabs)
+        window.styleMask = [.titled, .closable]
+        window.title = "Settings"
+        window.isReleasedWhenClosed = false
+        window.center()
+        return window
     }
 }
 
 // MARK: - General
 
-private struct GeneralSettings: View {
+struct GeneralSettings: View {
     @State private var loginItem = LoginItem()
     @AppStorage(Pref.showBatteryInMenuBar) private var showBattery = false
     @AppStorage(Pref.lowBatteryAlert) private var lowBatteryAlert = true
@@ -76,7 +91,7 @@ private struct GeneralSettings: View {
 
 // MARK: - Speaker
 
-private struct SpeakerSettings: View {
+struct SpeakerSettings: View {
     @Environment(SpeakerManager.self) private var speaker
     @AppStorage(Pref.autoConnect) private var autoConnect = true
     @State private var confirmForget = false
@@ -162,7 +177,7 @@ private struct SpeakerCard: View {
 
 // MARK: - Updates
 
-private struct UpdateSettings: View {
+struct UpdateSettings: View {
     @State private var updates = UpdateChecker.shared
     @AppStorage(Pref.autoCheckUpdates) private var autoCheck = true
 
@@ -204,7 +219,7 @@ private struct UpdateSettings: View {
 
 // MARK: - About
 
-private struct AboutSettings: View {
+struct AboutSettings: View {
     @Environment(SpeakerManager.self) private var speaker
     @State private var copied = false
 
@@ -241,7 +256,7 @@ private struct AboutSettings: View {
                     Label(copied ? "Copied" : "Copy Diagnostics", systemImage: copied ? "checkmark" : "stethoscope")
                 }
             }
-            .buttonStyle(.glass)
+            .adaptiveGlassButtonStyle()
             .tint(nil)
             .controlSize(.regular)
 

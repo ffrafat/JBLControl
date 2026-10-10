@@ -8,7 +8,8 @@
 
 <p align="center">
   <a href="../../releases/latest"><img src="https://img.shields.io/github/v/release/ffrafat/JBLControl?label=download" alt="Latest release"></a>
-  <img src="https://img.shields.io/badge/macOS-26%2B-blue" alt="macOS 26+">
+  <img src="https://img.shields.io/badge/macOS-14%2B-blue" alt="macOS 14+">
+  <img src="https://img.shields.io/badge/Apple%20Silicon%20%26%20Intel-universal-lightgrey" alt="Apple Silicon and Intel">
   <a href="LICENSE"><img src="https://img.shields.io/github/license/ffrafat/JBLControl" alt="MIT license"></a>
 </p>
 
@@ -17,7 +18,7 @@
 </p>
 
 Battery level, EQ presets and a custom equalizer for JBL Flip, Charge, Xtreme, Go, Clip, Pulse, Boombox and
-more, in a native Liquid Glass panel for macOS. No phone, no JBL Portable app.
+more, in a native macOS menu bar panel (Liquid Glass on Tahoe). No phone, no JBL Portable app.
 
 > Unofficial. Not affiliated with or endorsed by JBL or Harman International.
 
@@ -49,7 +50,7 @@ and it hides your speaker's MAC address and serial number.
 
 ## Installation
 
-**Requirements:** macOS 26 (Tahoe) or later, on a Mac with Bluetooth.
+**Requirements:** macOS 14 Sonoma or later, on Apple Silicon or Intel. On macOS 26 Tahoe and later the panel uses Liquid Glass; on Sonoma and Sequoia it uses the classic translucent look.
 
 ### Download
 
@@ -79,7 +80,7 @@ and it hides your speaker's MAC address and serial number.
 
 ### Build from source
 
-Needs Xcode 26 or later.
+Needs Xcode 26 or later (the app itself runs on macOS 14+). Builds are universal (Apple Silicon + Intel).
 
 ```bash
 git clone https://github.com/ffrafat/JBLControl.git

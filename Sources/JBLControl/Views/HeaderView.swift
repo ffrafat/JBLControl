@@ -24,7 +24,7 @@ struct HeaderView: View {
                         SupportBadge(level: model.support)
                     }
                 }
-                GlassEffectContainer(spacing: 6) {
+                AdaptiveGlassContainer(spacing: 6) {
                     HStack(spacing: 6) {
                         StatusPill()
                         if speaker.status == .connected, let level = speaker.battery {
@@ -109,7 +109,7 @@ struct StatusPill: View {
         .font(.caption.weight(.medium))
         .padding(.horizontal, 9)
         .padding(.vertical, 5)
-        .glassEffect(.regular, in: .capsule)
+        .adaptiveGlass(.regular, in: .capsule)
     }
 }
 
@@ -126,7 +126,7 @@ struct BatteryPill: View {
         .font(.caption.weight(.medium))
         .padding(.horizontal, 9)
         .padding(.vertical, 5)
-        .glassEffect(.regular, in: .capsule)
+        .adaptiveGlass(.regular, in: .capsule)
         .help(charging ? "Battery \(level)%, charging" : "Battery \(level)%")
     }
 }
