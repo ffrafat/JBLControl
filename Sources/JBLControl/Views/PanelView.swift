@@ -6,11 +6,14 @@ struct PanelView: View {
     @Environment(SpeakerManager.self) private var speaker
     @State private var toast: String?
 
-    private var color: SpeakerColor { speaker.model?.color(speaker.colorCode) ?? .fallback }
     private var ready: Bool { speaker.status == .connected && speaker.eq != nil }
 
     var body: some View {
         VStack(spacing: 14) {
+            if speaker.switchable.count > 1 {
+                SpeakerSwitcher()
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
             HeaderView()
             if let model = speaker.model, model.hasEQ {
                 if model.pickerPresets.count > 1 {
@@ -37,14 +40,16 @@ struct PanelView: View {
             }
         }
         .animation(.smooth, value: toast)
-        .onAppear { speaker.refresh() }
+        .animation(.smooth, value: speaker.switchable.count > 1)
+        .tint(Theme.accent)
+        .onAppear { speaker.panelOpened() }
+        .onDisappear { speaker.panelClosed() }
     }
 
-    /// Soft wash of the speaker's own color behind the glass, so the glass has something to refract.
+    /// Soft sunset wash behind the glass, so the glass has something to refract.
     private var ambientGlow: some View {
-        let (start, end) = color.gradient
-        return LinearGradient(
-            colors: [Color(hex: start).opacity(0.45), Color(hex: end).opacity(0.25), .clear],
+        LinearGradient(
+            colors: [Theme.start.opacity(0.38), Theme.end.opacity(0.16), .clear],
             startPoint: .topLeading, endPoint: .bottom
         )
         .blur(radius: 30)
@@ -145,11 +150,12 @@ enum MoreMenu {
                 toast("Diagnostics copied")
             }
         })
-        if let url = Diagnostics.issuesURL {
-            menu.addItem(ActionItem("Report an Issue…", symbol: "exclamationmark.bubble") {
-                NSWorkspace.shared.open(url)
-            })
-        }
+        menu.addItem(ActionItem("Report an Issue…", symbol: "exclamationmark.bubble") {
+            NSWorkspace.shared.open(AppInfo.issuesURL)
+        })
+        menu.addItem(.separator())
+        menu.addItem(ActionItem("About \(AppInfo.name)", symbol: "info.circle") { AppInfo.showAboutPanel() })
+        menu.addItem(ActionItem("View on GitHub", symbol: "safari") { NSWorkspace.shared.open(AppInfo.repositoryURL) })
         menu.addItem(.separator())
         menu.addItem(ActionItem("Quit JBLControl", symbol: "power", key: "q") { NSApp.terminate(nil) })
         menu.popUp(positioning: nil, at: NSEvent.mouseLocation, in: nil)

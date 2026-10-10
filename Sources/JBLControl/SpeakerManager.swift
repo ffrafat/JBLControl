@@ -45,6 +45,12 @@ final class SpeakerManager: NSObject {
     var isCustomActive: Bool { eq != nil && eq?.activeCategory == model?.customCategory }
     var canWrite: Bool { model.map { !$0.writesNeedOptIn || allowExperimentalWrites } ?? false }
     var connectedID: UUID? { status == .connected ? peripheral?.identifier : nil }
+    /// The speaker being controlled or connected to.
+    var activeID: UUID? { peripheral?.identifier }
+    /// Nearby speakers the user can switch to (supported models, strongest signal first).
+    var switchable: [DiscoveredSpeaker] {
+        discovered.filter { $0.model.map { $0.support != .unsupported } ?? false }.sorted { $0.rssi > $1.rssi }
+    }
 
     @ObservationIgnored private var central: CBCentralManager!
     @ObservationIgnored private var peripheral: CBPeripheral?
@@ -59,6 +65,7 @@ final class SpeakerManager: NSObject {
     @ObservationIgnored private var eqTimeout: Task<Void, Never>?
     @ObservationIgnored private var pollTask: Task<Void, Never>?
     @ObservationIgnored private var connectWatchdog: Task<Void, Never>?
+    @ObservationIgnored private var browsing = false
     @ObservationIgnored private(set) var gattSummary: [String] = []
 
     private struct Outgoing {
@@ -84,6 +91,20 @@ final class SpeakerManager: NSObject {
     private var codec: EQCodec? { model.map(EQCodec.init) }
 
     // MARK: Actions
+
+    /// While the panel is open, keep scanning so speakers turned on later show up to switch to.
+    func panelOpened() {
+        browsing = true
+        // Drop speakers that may have gone away; anything still on air re-appears within a second.
+        discovered.removeAll { $0.id != activeID }
+        if central.state == .poweredOn { scan() }
+        refresh()
+    }
+
+    func panelClosed() {
+        browsing = false
+        if status == .connected { central.stopScan() }
+    }
 
     func refresh() {
         guard status == .connected else { return }
@@ -380,7 +401,7 @@ extension SpeakerManager: @preconcurrency CBCentralManagerDelegate {
 
     func centralManager(_ central: CBCentralManager, didConnect p: CBPeripheral) {
         log.info("connected to \(p.identifier, privacy: .public)")
-        central.stopScan()
+        if !browsing { central.stopScan() }
         connectWatchdog?.cancel()
         let advertised = discovered.first { $0.id == p.identifier }
         remember(name: advertised?.name, productID: advertised?.productID ?? productID, id: p.identifier)

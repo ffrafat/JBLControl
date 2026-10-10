@@ -28,7 +28,7 @@ struct PresetPicker: View {
                     }
                     .buttonStyle(.plain)
                     .glassEffect(
-                        selected ? .regular.tint(.accentColor).interactive() : .regular.interactive(),
+                        selected ? .regular.tint(Theme.accent).interactive() : .regular.interactive(),
                         in: .rect(cornerRadius: 16)
                     )
                     .glassEffectID(preset.id, in: glass)

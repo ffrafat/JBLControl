@@ -4,9 +4,6 @@ import JBLControlKit
 /// Builds a Markdown report that's safe to paste into a public GitHub issue.
 @MainActor
 enum Diagnostics {
-    /// Offered as "Report an Issue…" in the ••• menu.
-    static let issuesURL: URL? = URL(string: "https://github.com/ffrafat/JBLControl/issues/new?template=device-report.yml")
-
     static func copyReport(_ speaker: SpeakerManager) async {
         await speaker.runDiagnosticProbe()
         let report = build(speaker)

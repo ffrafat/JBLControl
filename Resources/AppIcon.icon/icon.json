@@ -9,14 +9,40 @@
     {
       "layers": [
         {
-          "image-name": "seams.svg",
-          "name": "seams",
-          "glass": false,
-          "opacity": 0.12
+          "image-name": "bars.svg",
+          "name": "bars",
+          "glass": false
         },
         {
-          "image-name": "body.svg",
-          "name": "speaker",
+          "image-name": "badge.svg",
+          "name": "badge",
+          "glass": true
+        }
+      ],
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.5
+      },
+      "translucency": {
+        "enabled": false,
+        "value": 0
+      }
+    },
+    {
+      "layers": [
+        {
+          "image-name": "hub.svg",
+          "name": "hub",
+          "glass": true
+        },
+        {
+          "image-name": "radiator.svg",
+          "name": "radiator",
+          "glass": true
+        },
+        {
+          "image-name": "endcap.svg",
+          "name": "endcap",
           "glass": true
         }
       ],
@@ -26,25 +52,29 @@
       },
       "translucency": {
         "enabled": true,
-        "value": 0.3
+        "value": 0.2
       }
     },
     {
       "layers": [
         {
-          "image-name": "bars.svg",
-          "name": "eq",
-          "glass": true,
-          "opacity": 0.9
+          "image-name": "bumper.svg",
+          "name": "bumper",
+          "glass": true
+        },
+        {
+          "image-name": "body.svg",
+          "name": "body",
+          "glass": true
         }
       ],
       "shadow": {
         "kind": "neutral",
-        "opacity": 0.4
+        "opacity": 0.5
       },
       "translucency": {
         "enabled": true,
-        "value": 0.5
+        "value": 0.2
       }
     }
   ],

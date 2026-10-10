@@ -58,7 +58,7 @@ struct EqualizerView: View {
             ZStack {
                 if let curveBands {
                     ResponseCurve(bands: curveBands, frequencies: specs.map(\.frequency), range: range)
-                        .stroke(Color.accentColor.opacity(isCustom ? 0.55 : 0.9),
+                        .stroke(Theme.accent.opacity(isCustom ? 0.55 : 0.9),
                                 style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
                 }
                 HStack(spacing: 0) {
@@ -165,7 +165,7 @@ struct BandColumn: View {
 
                 Capsule()
                     .fill(LinearGradient(
-                        colors: [Color.accentColor, Color.accentColor.opacity(0.55)],
+                        colors: [Theme.start, Theme.end],
                         startPoint: value >= 0 ? .top : .bottom, endPoint: value >= 0 ? .bottom : .top
                     ))
                     .frame(width: 8, height: max(abs(zeroY - valueY), 2))
