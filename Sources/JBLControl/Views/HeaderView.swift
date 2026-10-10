@@ -137,6 +137,7 @@ struct BatteryPill: View {
                             .contentShape(.rect)
                     }
                     .buttonStyle(.plain)
+                    .focusEffectDisabled()
                     .help(active
                           ? "Keeping the speaker awake. Click to turn off."
                           : "Keep Awake is on, but this speaker isn't your Mac's sound output, so it can't be kept "

@@ -40,7 +40,10 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
             popover.performClose(nil)
         } else {
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
-            popover.contentViewController?.view.window?.makeKey()
+            let window = popover.contentViewController?.view.window
+            window?.makeKey()
+            // Don't hand keyboard focus to the first control (it would draw a focus ring on open).
+            window?.makeFirstResponder(nil)
         }
     }
 
