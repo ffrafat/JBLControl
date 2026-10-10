@@ -29,6 +29,7 @@ more, in a native macOS menu bar panel (Liquid Glass on Tahoe). No phone, no JBL
 - 🔄 Auto-reconnects, even though JBL speakers rotate their Bluetooth address
 - 🖼️ The speaker shown in its actual color
 - 🔀 One-click switching when several JBL speakers are nearby
+- ☕ Keep Awake: stops the speaker's auto power-off while your Mac is playing to it (JBL has no setting for this)
 - ⚙️ Settings: launch at login, battery percentage in the menu bar, low-battery alerts, update checks
 - 🧪 Built-in diagnostics report, so owners of untested models can help add support
 
@@ -74,6 +75,17 @@ A speaker icon appears in the menu bar. Turn your JBL speaker on and click the i
 
 **Uninstall:** quit it and drag JBLControl from Applications to the Trash. Optionally also delete
 `~/Library/Caches/io.github.jblcontrol` (cached speaker photos).
+
+### Keep Awake
+
+JBL portables switch themselves off after roughly 10–20 minutes without sound, and JBL offers no way to
+change that (except on the Go 5 and Xtreme 5). Turn on **Keep speaker awake** (Settings → Speaker, or
+••• → Keep Speaker Awake) and, while the speaker is your Mac's sound output, JBLControl plays a 2-second,
+inaudible 30 Hz tone every 5 minutes so the speaker never sees long enough silence.
+
+- Works with any JBL speaker, but only when your Mac is the audio source (not a phone).
+- While it's on, the menu bar speaker turns orange and the panel shows a cup; click the cup to turn it off.
+- The speaker keeps using battery while it stays on.
 
 ### If macOS blocks JBLControl
 
