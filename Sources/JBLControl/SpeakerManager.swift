@@ -36,8 +36,8 @@ final class SpeakerManager: NSObject {
     private(set) var customGains: [Float] = []
     private(set) var traffic: [TrafficEntry] = []
 
-    var allowExperimentalWrites: Bool = UserDefaults.standard.bool(forKey: "allowExperimentalWrites") {
-        didSet { UserDefaults.standard.set(allowExperimentalWrites, forKey: "allowExperimentalWrites") }
+    var allowExperimentalWrites: Bool = UserDefaults.standard.bool(forKey: Pref.allowExperimentalWrites) {
+        didSet { UserDefaults.standard.set(allowExperimentalWrites, forKey: Pref.allowExperimentalWrites) }
     }
 
     var model: SpeakerModel? { Catalog.model(productID) }
@@ -66,6 +66,7 @@ final class SpeakerManager: NSObject {
     @ObservationIgnored private var pollTask: Task<Void, Never>?
     @ObservationIgnored private var connectWatchdog: Task<Void, Never>?
     @ObservationIgnored private var browsing = false
+    @ObservationIgnored private var lowBatteryNotified = false
     @ObservationIgnored private(set) var gattSummary: [String] = []
 
     private struct Outgoing {
@@ -158,7 +159,7 @@ final class SpeakerManager: NSObject {
 
     private func startDiscovery() {
         guard central.state == .poweredOn else { return }
-        if let saved = UserDefaults.standard.string(forKey: Saved.identifier).flatMap(UUID.init),
+        if autoConnect, let saved = UserDefaults.standard.string(forKey: Saved.identifier).flatMap(UUID.init),
            let known = central.retrievePeripherals(withIdentifiers: [saved]).first {
             connect(known)
         }
@@ -294,7 +295,7 @@ final class SpeakerManager: NSObject {
             case .name(let n): name = n
             case .productID(let pid): setProductID(pid)
             case .color(let c): colorCode = c
-            case .battery(let b): battery = b
+            case .battery(let b): batteryChanged(b)
             case .firmware(let f): firmware = f
             default: break
             }
@@ -308,6 +309,18 @@ final class SpeakerManager: NSObject {
         default:
             break
         }
+    }
+
+    private var autoConnect: Bool { UserDefaults.standard.bool(forKey: Pref.autoConnect) }
+
+    /// Notifies once when the level drops to the threshold; re-arms after it recovers a little.
+    private func batteryChanged(_ level: Int) {
+        battery = level
+        if level > Notifier.lowBatteryThreshold + 5 { lowBatteryNotified = false }
+        guard level <= Notifier.lowBatteryThreshold, !lowBatteryNotified,
+              UserDefaults.standard.bool(forKey: Pref.lowBatteryAlert) else { return }
+        lowBatteryNotified = true
+        Notifier.lowBattery(speaker: name ?? model?.name ?? "JBL speaker", level: level)
     }
 
     private func setProductID(_ pid: UInt16) {
@@ -388,7 +401,7 @@ extension SpeakerManager: @preconcurrency CBCentralManagerDelegate {
         }
 
         // Auto-connect: the remembered speaker, or the first supported one when none is remembered.
-        guard status != .connected, peripheral?.identifier != p.identifier,
+        guard autoConnect, status != .connected, peripheral?.identifier != p.identifier,
               let model = speaker.model, model.support != .unsupported else { return }
         switch isRemembered(speaker) {
         case true?, nil:

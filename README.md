@@ -27,6 +27,8 @@ more, in a native Liquid Glass panel for macOS. No phone, no JBL Portable app.
 - 🎚️ JBL's EQ presets (Signature, Chill, Energetic, Vocal…) and a custom equalizer with a live response curve
 - 🔄 Auto-reconnects, even though JBL speakers rotate their Bluetooth address
 - 🖼️ The speaker shown in its actual color
+- 🔀 One-click switching when several JBL speakers are nearby
+- ⚙️ Settings: launch at login, battery percentage in the menu bar, low-battery alerts, update checks
 - 🧪 Built-in diagnostics report, so owners of untested models can help add support
 
 ## Supported speakers
@@ -68,7 +70,7 @@ and it hides your speaker's MAC address and serial number.
 > Close the JBL Portable app on your phone if JBLControl can't connect: speakers accept one control
 > connection at a time.
 
-**Start at login:** System Settings → General → Login Items → **+** → JBLControl.
+**Start at login:** ••• → **Settings…** → General → **Launch at login**.
 
 **Update:** quit JBLControl (**••• → Quit**), replace the app in Applications with the new one.
 

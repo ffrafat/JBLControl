@@ -11,10 +11,11 @@ rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN" "$APP/Contents/MacOS/JBLControl"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
-# Liquid Glass icon: actool turns the Icon Composer file into Assets.car (+ AppIcon.icns for older systems).
+# Liquid Glass icon + sunset accent color: actool compiles both into Assets.car (+ AppIcon.icns).
 # actool resolves relative paths against $PWD, which can be stale; pass absolute ones.
-xcrun actool "$(pwd -P)/Resources/AppIcon.icon" --compile "$(pwd -P)/$APP/Contents/Resources" --platform macosx \
-  --minimum-deployment-target 26.0 --app-icon AppIcon \
+xcrun actool "$(pwd -P)/Resources/Assets.xcassets" "$(pwd -P)/Resources/AppIcon.icon" \
+  --compile "$(pwd -P)/$APP/Contents/Resources" --platform macosx \
+  --minimum-deployment-target 26.0 --app-icon AppIcon --accent-color AccentColor \
   --output-partial-info-plist "$(mktemp -d)/icon.plist" >/dev/null
 # A real identity keeps the code requirement stable, so macOS remembers the Bluetooth
 # permission across rebuilds. Falls back to ad-hoc signing when none is available.

@@ -7,10 +7,14 @@ struct PanelView: View {
     @State private var toast: String?
 
     private var ready: Bool { speaker.status == .connected && speaker.eq != nil }
+    /// Several speakers nearby, or none connected (e.g. auto-connect is off): offer the choice.
+    private var showSwitcher: Bool {
+        speaker.switchable.count > 1 || (speaker.activeID == nil && !speaker.switchable.isEmpty)
+    }
 
     var body: some View {
         VStack(spacing: 14) {
-            if speaker.switchable.count > 1 {
+            if showSwitcher {
                 SpeakerSwitcher()
                     .transition(.opacity.combined(with: .move(edge: .top)))
             }
@@ -40,7 +44,7 @@ struct PanelView: View {
             }
         }
         .animation(.smooth, value: toast)
-        .animation(.smooth, value: speaker.switchable.count > 1)
+        .animation(.smooth, value: showSwitcher)
         .tint(Theme.accent)
         .onAppear { speaker.panelOpened() }
         .onDisappear { speaker.panelClosed() }
@@ -80,6 +84,7 @@ struct NoEQNotice: View {
 
 struct FooterView: View {
     @Environment(SpeakerManager.self) private var speaker
+    @Environment(\.openSettings) private var openSettings
     @Binding var toast: String?
 
     var body: some View {
@@ -93,7 +98,11 @@ struct FooterView: View {
             // A SwiftUI Menu under a glass effect doesn't open inside a MenuBarExtra panel,
             // so this pops a plain NSMenu at the pointer instead.
             Button {
-                MoreMenu.show(speaker) { message in
+                MoreMenu.show(speaker, openSettings: {
+                    // A menu bar app isn't frontmost; bring the Settings window forward.
+                    NSApp.activate()
+                    openSettings()
+                }) { message in
                     toast = message
                     Task {
                         try? await Task.sleep(for: .seconds(2))
@@ -115,35 +124,11 @@ struct FooterView: View {
 
 @MainActor
 enum MoreMenu {
-    static func show(_ speaker: SpeakerManager, toast: @escaping (String) -> Void) {
+    static func show(_ speaker: SpeakerManager, openSettings: @escaping () -> Void, toast: @escaping (String) -> Void) {
         let menu = NSMenu()
-        menu.addItem(ActionItem("Refresh", symbol: "arrow.clockwise") { speaker.refresh() })
-
-        let speakers = NSMenu()
-        for s in speaker.discovered.sorted(by: { $0.rssi > $1.rssi }) {
-            let label = s.model.map { "\(s.name) — \($0.shortName)" } ?? "\(s.name) — unknown model"
-            let item = ActionItem(label, symbol: "hifispeaker") { speaker.choose(s) }
-            item.state = s.id == speaker.connectedID ? .on : .off
-            item.isEnabled = s.model?.support != .unsupported
-            speakers.addItem(item)
-        }
-        if speakers.items.isEmpty {
-            speakers.addItem(NSMenuItem(title: "No JBL speakers found", action: nil, keyEquivalent: ""))
-        }
-        speakers.addItem(.separator())
-        speakers.addItem(ActionItem("Forget Speaker", symbol: "xmark.circle") { speaker.forgetSpeaker() })
-        let speakersItem = NSMenuItem(title: "Speakers", action: nil, keyEquivalent: "")
-        speakersItem.image = NSImage(systemSymbolName: "hifispeaker.2", accessibilityDescription: nil)
-        speakersItem.submenu = speakers
-        menu.addItem(speakersItem)
+        menu.addItem(ActionItem("Settings…", symbol: "gearshape", key: ",") { openSettings() })
 
         menu.addItem(.separator())
-        let experimental = ActionItem("Allow Experimental EQ", symbol: "flask") {
-            speaker.allowExperimentalWrites.toggle()
-        }
-        experimental.state = speaker.allowExperimentalWrites ? .on : .off
-        experimental.toolTip = "Let EQ changes through on models that haven't been confirmed on hardware."
-        menu.addItem(experimental)
         menu.addItem(ActionItem("Copy Diagnostics", symbol: "stethoscope") {
             Task {
                 await Diagnostics.copyReport(speaker)
@@ -153,11 +138,10 @@ enum MoreMenu {
         menu.addItem(ActionItem("Report an Issue…", symbol: "exclamationmark.bubble") {
             NSWorkspace.shared.open(AppInfo.issuesURL)
         })
+
         menu.addItem(.separator())
         menu.addItem(ActionItem("About \(AppInfo.name)", symbol: "info.circle") { AppInfo.showAboutPanel() })
-        menu.addItem(ActionItem("View on GitHub", symbol: "safari") { NSWorkspace.shared.open(AppInfo.repositoryURL) })
-        menu.addItem(.separator())
-        menu.addItem(ActionItem("Quit JBLControl", symbol: "power", key: "q") { NSApp.terminate(nil) })
+        menu.addItem(ActionItem("Quit \(AppInfo.name)", symbol: "power", key: "q") { NSApp.terminate(nil) })
         menu.popUp(positioning: nil, at: NSEvent.mouseLocation, in: nil)
     }
 
