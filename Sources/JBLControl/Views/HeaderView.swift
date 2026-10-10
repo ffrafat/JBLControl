@@ -28,7 +28,7 @@ struct HeaderView: View {
                     HStack(spacing: 6) {
                         StatusPill()
                         if speaker.status == .connected, let level = speaker.battery {
-                            BatteryPill(level: level)
+                            BatteryPill(level: level, charging: speaker.isCharging)
                         }
                     }
                 }
@@ -115,12 +115,11 @@ struct StatusPill: View {
 
 struct BatteryPill: View {
     let level: Int
+    let charging: Bool
 
     var body: some View {
-        HStack(spacing: 4) {
-            Image(systemName: symbol)
-                .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(level <= 20 ? .red : .primary)
+        HStack(spacing: 5) {
+            BatteryGlyph(level: level, charging: charging)
             Text("\(level)%")
                 .monospacedDigit()
         }
@@ -128,16 +127,44 @@ struct BatteryPill: View {
         .padding(.horizontal, 9)
         .padding(.vertical, 5)
         .glassEffect(.regular, in: .capsule)
-        .help("Battery \(level)%")
+        .help(charging ? "Battery \(level)%, charging" : "Battery \(level)%")
+    }
+}
+
+/// A battery drawn to its actual level, with a bolt while charging (like the macOS menu bar).
+/// SF Symbols only ships a charging battery at 100%.
+struct BatteryGlyph: View {
+    let level: Int
+    let charging: Bool
+
+    private var fill: Color {
+        if charging { return .green }
+        return level <= Notifier.lowBatteryThreshold ? .red : .primary
     }
 
-    private var symbol: String {
-        switch level {
-        case 88...: "battery.100percent"
-        case 63..<88: "battery.75percent"
-        case 38..<63: "battery.50percent"
-        case 13..<38: "battery.25percent"
-        default: "battery.0percent"
+    var body: some View {
+        HStack(spacing: 1) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 3.5)
+                    .strokeBorder(.primary.opacity(0.45), lineWidth: 1)
+                GeometryReader { geo in
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(fill)
+                        .frame(width: max(2, (geo.size.width) * CGFloat(min(max(level, 0), 100)) / 100))
+                }
+                .padding(2)
+                if charging {
+                    Image(systemName: "bolt.fill")
+                        .font(.system(size: 8, weight: .black))
+                        .foregroundStyle(.white)
+                        .shadow(color: .black.opacity(0.35), radius: 0.5)
+                }
+            }
+            .frame(width: 23, height: 11.5)
+            RoundedRectangle(cornerRadius: 1)
+                .fill(.primary.opacity(0.45))
+                .frame(width: 1.5, height: 4)
         }
+        .accessibilityHidden(true)
     }
 }

@@ -38,7 +38,7 @@ let flip7 = Catalog.model(0x2107)!
     """))
     let tokens = frames.compactMap { InfoToken.parse($0.payload) }
     #expect(tokens == [
-        .name("FFR JBL Flip 7"), .productID(0x2107), .color(0x01), .battery(30),
+        .name("FFR JBL Flip 7"), .productID(0x2107), .color(0x01), .battery(level: 30, charging: false),
         .audioSourceConnected(false), .firmware("0.7.2.0"),
     ])
 }
@@ -63,4 +63,10 @@ let flip7 = Catalog.model(0x2107)!
     #expect(abs(EQResponse.gain(at: 1000, bands: EQLayouts.parametricShape)) < 0.001)
     let energetic = try #require(flip7.presets.first { $0.category == 0x08 })
     #expect(EQResponse.gain(at: 200, bands: energetic.bands) > 6)
+}
+
+// Captured from the same Flip 7 while plugged in.
+@Test func batteryHighBitMeansCharging() {
+    #expect(InfoToken.parse([0x00, 0x44, 0x8A]) == .battery(level: 10, charging: true))
+    #expect(InfoToken.parse([0x00, 0x44, 0x64]) == .battery(level: 100, charging: false))
 }

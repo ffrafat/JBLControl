@@ -102,7 +102,8 @@ public enum InfoToken: Equatable, Sendable {
     case serial(String)
     case productID(UInt16)
     case color(UInt8)
-    case battery(Int)
+    /// Percentage in the low 7 bits; the high bit is set while charging (Flip 7: `0x8A` = charging, 10%).
+    case battery(level: Int, charging: Bool)
     case audioChannel(UInt8)
     case audioSourceConnected(Bool)
     case firmware(String)
@@ -124,7 +125,7 @@ public enum InfoToken: Equatable, Sendable {
         switch (token, value.count) {
         case (0x42, 2...): return .productID(UInt16(value[0]) << 8 | UInt16(value[1]))
         case (0x43, 1...): return .color(value[0])
-        case (0x44, 1...): return .battery(Int(value[0]))
+        case (0x44, 1...): return .battery(level: Int(value[0] & 0x7F), charging: value[0] & 0x80 != 0)
         case (0x46, 1...): return .audioChannel(value[0])
         case (0x47, 1...): return .audioSourceConnected(value[0] != 0)
         case (0x4D, 1...): return .firmware(FirmwareVersion.format(value))

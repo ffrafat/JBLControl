@@ -25,7 +25,7 @@ enum Diagnostics {
         }
         lines.append("- Status: \(speaker.status)")
         if let firmware = speaker.firmware { lines.append("- Firmware: \(firmware)") }
-        if let battery = speaker.battery { lines.append("- Battery: \(battery)%") }
+        if let battery = speaker.battery { lines.append("- Battery: \(battery)%\(speaker.isCharging ? " (charging)" : "")") }
         if let eq = speaker.eq {
             lines.append("- EQ: active `\(String(format: "%02X", eq.activeCategory))`, custom \(speaker.customGains)")
         }

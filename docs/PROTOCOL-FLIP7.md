@@ -33,7 +33,7 @@ Answered by a burst of `AA 12` frames, payload `00 | token | value` (`AA 11` wit
 | `C1` | len + `FFR JBL Flip 7` | device name |
 | `42` | `21 07` | product ID |
 | `43` | `01` | color code (01 = Black) |
-| `44` | `1E` | battery % (30) |
+| `44` | `1E`, `8A` | battery: low 7 bits are the % (30), high bit set while charging (`8A` = charging, 10%) |
 | `46` | `00` | audio channel |
 | `47` | `00` | Bluetooth audio source connected |
 | `48` | 6 bytes | MAC address |

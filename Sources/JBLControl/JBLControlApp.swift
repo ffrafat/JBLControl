@@ -23,7 +23,8 @@ struct JBLControlApp: App {
         } label: {
             Image(systemName: speaker.status == .connected ? "hifispeaker.fill" : "hifispeaker")
             if showBattery, speaker.status == .connected, let level = speaker.battery {
-                Text("\(level)%")
+                // The menu bar only renders symbols and text; macOS has a bolt battery symbol at 100% only.
+                Text(speaker.isCharging ? "\(Image(systemName: "bolt.fill"))\(level)%" : "\(level)%")
             }
         }
         .menuBarExtraStyle(.window)

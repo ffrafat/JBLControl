@@ -45,7 +45,7 @@ enum SnapshotMode {
                 view.cacheDisplay(in: view.bounds, to: rep)
                 try? rep.representation(using: .png, properties: [:])?.write(to: URL(fileURLWithPath: path))
             }
-            print("status=\(speaker.status) model=\(speaker.model?.name ?? "-") battery=\(speaker.battery ?? -1) "
+            print("status=\(speaker.status) model=\(speaker.model?.name ?? "-") battery=\(speaker.battery ?? -1)\(speaker.isCharging ? "+charging" : "") "
                 + "preset=\(speaker.activePreset?.name ?? "-") custom=\(speaker.customGains) firmware=\(speaker.firmware ?? "-")")
             if CommandLine.arguments.contains("--diagnostics") {
                 await speaker.runDiagnosticProbe()

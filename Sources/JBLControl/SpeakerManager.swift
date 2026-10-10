@@ -34,6 +34,7 @@ final class SpeakerManager: NSObject {
     private(set) var productID: UInt16?
     private(set) var colorCode: UInt8?
     private(set) var battery: Int?
+    private(set) var isCharging = false
     private(set) var firmware: String?
     private(set) var eq: EQSnapshot?
     /// Last known custom curve; survives replies that don't carry it.
@@ -303,7 +304,7 @@ final class SpeakerManager: NSObject {
             case .name(let n): name = n
             case .productID(let pid): setProductID(pid)
             case .color(let c): colorCode = c
-            case .battery(let b): batteryChanged(b)
+            case .battery(let level, let charging): batteryChanged(level, charging: charging)
             case .firmware(let f): firmware = f
             default: break
             }
@@ -330,10 +331,11 @@ final class SpeakerManager: NSObject {
     private var autoConnect: Bool { UserDefaults.standard.bool(forKey: Pref.autoConnect) }
 
     /// Notifies once when the level drops to the threshold; re-arms after it recovers a little.
-    private func batteryChanged(_ level: Int) {
+    private func batteryChanged(_ level: Int, charging: Bool) {
         battery = level
-        if level > Notifier.lowBatteryThreshold + 5 { lowBatteryNotified = false }
-        guard level <= Notifier.lowBatteryThreshold, !lowBatteryNotified,
+        isCharging = charging
+        if charging || level > Notifier.lowBatteryThreshold + 5 { lowBatteryNotified = false }
+        guard !charging, level <= Notifier.lowBatteryThreshold, !lowBatteryNotified,
               UserDefaults.standard.bool(forKey: Pref.lowBatteryAlert) else { return }
         lowBatteryNotified = true
         Notifier.lowBattery(speaker: name ?? model?.name ?? "JBL speaker", level: level)

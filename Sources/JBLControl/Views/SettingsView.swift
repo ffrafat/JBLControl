@@ -154,7 +154,7 @@ private struct SpeakerCard: View {
             return speaker.activeID == nil ? "Turn a JBL speaker on nearby." : "Connecting…"
         }
         var parts = [speaker.model?.name ?? "Unknown model"]
-        if let battery = speaker.battery { parts.append("\(battery)% battery") }
+        if let battery = speaker.battery { parts.append("\(battery)% battery\(speaker.isCharging ? ", charging" : "")") }
         if let firmware = speaker.firmware { parts.append("Firmware \(firmware)") }
         return parts.joined(separator: " · ")
     }
