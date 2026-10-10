@@ -7,14 +7,16 @@ import SwiftUI
 @MainActor
 final class StatusBarController: NSObject, NSPopoverDelegate {
     private let speaker: SpeakerManager
+    private let keepAwake: KeepAwake
     private let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     private let popover = NSPopover()
 
-    init(speaker: SpeakerManager) {
+    init(speaker: SpeakerManager, keepAwake: KeepAwake) {
         self.speaker = speaker
+        self.keepAwake = keepAwake
         super.init()
 
-        let host = NSHostingController(rootView: PanelView().environment(speaker))
+        let host = NSHostingController(rootView: PanelView().environment(speaker).environment(keepAwake))
         // The popover follows the panel's size as the equalizer appears and disappears.
         host.sizingOptions = [.preferredContentSize]
         popover.contentViewController = host
@@ -57,9 +59,12 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
             let connected = speaker.status == .connected
             let showBattery = UserDefaults.standard.bool(forKey: Pref.showBatteryInMenuBar)
             let battery = showBattery && connected ? speaker.battery : nil
-            item.button?.image = MenuBarIcon.image(connected: connected, battery: battery, charging: speaker.isCharging)
-            item.button?.title = battery.map { " \($0)%" } ?? ""
-            item.button?.toolTip = speaker.name ?? AppInfo.name
+            item.button?.image = MenuBarIcon.image(connected: connected, battery: battery, charging: speaker.isCharging,
+                                                   keepingAwake: keepAwake.state != .off)
+            item.button?.title = ""
+            item.button?.toolTip = keepAwake.state == .off
+                ? (speaker.name ?? AppInfo.name)
+                : "\(speaker.name ?? AppInfo.name): keeping awake"
         } onChange: { [weak self] in
             Task { @MainActor in self?.render() }
         }

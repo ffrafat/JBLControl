@@ -4,6 +4,7 @@ import SwiftUI
 
 struct PanelView: View {
     @Environment(SpeakerManager.self) private var speaker
+    @Environment(KeepAwake.self) private var keepAwake
     @State private var toast: String?
 
     private var ready: Bool { speaker.status == .connected && speaker.eq != nil }
@@ -55,6 +56,7 @@ struct PanelView: View {
         .animation(.smooth, value: toast)
         .animation(.smooth, value: showSwitcher)
         .animation(.smooth(duration: 0.3), value: speaker.isCustomActive)
+        .animation(.smooth, value: keepAwake.state)
         .tint(Theme.accent)
 
     }
@@ -93,6 +95,7 @@ struct NoEQNotice: View {
 
 struct FooterView: View {
     @Environment(SpeakerManager.self) private var speaker
+    @Environment(KeepAwake.self) private var keepAwake
     @Binding var toast: String?
 
     var body: some View {
@@ -106,8 +109,8 @@ struct FooterView: View {
             // A SwiftUI Menu under a glass effect doesn't open inside a MenuBarExtra panel,
             // so this pops a plain NSMenu at the pointer instead.
             Button {
-                MoreMenu.show(speaker, openSettings: {
-                    SettingsWindowController.shared.show(speaker)
+                MoreMenu.show(speaker, keepAwake: keepAwake, openSettings: {
+                    SettingsWindowController.shared.show(speaker, keepAwake: keepAwake)
                 }) { message in
                     toast = message
                     Task {
@@ -132,8 +135,14 @@ struct FooterView: View {
 
 @MainActor
 enum MoreMenu {
-    static func show(_ speaker: SpeakerManager, openSettings: @escaping () -> Void, toast: @escaping (String) -> Void) {
+    static func show(_ speaker: SpeakerManager, keepAwake: KeepAwake, openSettings: @escaping () -> Void,
+                     toast: @escaping (String) -> Void) {
         let menu = NSMenu()
+        let awake = ActionItem("Keep Speaker Awake", symbol: "cup.and.saucer") { keepAwake.isEnabled.toggle() }
+        awake.state = keepAwake.isEnabled ? .on : .off
+        awake.toolTip = "Stops the speaker's auto power-off while it's your Mac's sound output."
+        menu.addItem(awake)
+        menu.addItem(.separator())
         menu.addItem(ActionItem("Settings…", symbol: "gearshape", key: ",") { openSettings() })
 
         menu.addItem(.separator())

@@ -8,6 +8,7 @@ enum Pref {
     static let lowBatteryAlert = "lowBatteryAlert"
     static let autoCheckUpdates = "autoCheckUpdates"
     static let allowExperimentalWrites = "allowExperimentalWrites"
+    static let keepAwake = "keepAwake"
 
     static func registerDefaults() {
         UserDefaults.standard.register(defaults: [
@@ -16,6 +17,7 @@ enum Pref {
             lowBatteryAlert: true,
             autoCheckUpdates: true,
             allowExperimentalWrites: false,
+            keepAwake: false,
         ])
     }
 }

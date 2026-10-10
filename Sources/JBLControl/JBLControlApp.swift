@@ -14,6 +14,7 @@ struct JBLControlApp: App {
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private let speaker: SpeakerManager
+    private var keepAwake: KeepAwake?
     private var statusBar: StatusBarController?
 
     override init() {
@@ -23,8 +24,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        SnapshotMode.runIfRequested(speaker)
-        statusBar = StatusBarController(speaker: speaker)
+        let keepAwake = KeepAwake(speaker: speaker)
+        self.keepAwake = keepAwake
+        SnapshotMode.runIfRequested(speaker, keepAwake: keepAwake)
+        statusBar = StatusBarController(speaker: speaker, keepAwake: keepAwake)
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(5))
             UpdateChecker.shared.checkAutomaticallyIfDue()

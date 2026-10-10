@@ -9,18 +9,19 @@ final class SettingsWindowController {
     static let shared = SettingsWindowController()
     private var window: NSWindow?
 
-    func show(_ speaker: SpeakerManager) {
-        if window == nil { window = makeWindow(speaker) }
+    func show(_ speaker: SpeakerManager, keepAwake: KeepAwake) {
+        if window == nil { window = makeWindow(speaker, keepAwake) }
         NSApp.activate()
         window?.makeKeyAndOrderFront(nil)
     }
 
-    private func makeWindow(_ speaker: SpeakerManager) -> NSWindow {
+    private func makeWindow(_ speaker: SpeakerManager, _ keepAwake: KeepAwake) -> NSWindow {
         let tabs = NSTabViewController()
         tabs.tabStyle = .toolbar
         tabs.transitionOptions = [.allowUserInteraction]
         func add<V: View>(_ title: String, _ symbol: String, _ view: V) {
-            let host = NSHostingController(rootView: view.environment(speaker).tint(Theme.accent).frame(width: 480))
+            let host = NSHostingController(rootView: view.environment(speaker).environment(keepAwake)
+                .tint(Theme.accent).frame(width: 480))
             host.sizingOptions = [.preferredContentSize]
             let item = NSTabViewItem(viewController: host)
             item.label = title
@@ -117,6 +118,7 @@ struct SpeakerSettings: View {
                     Text("Disconnect and stop reconnecting to it.")
                 }
             }
+            KeepAwakeSection()
             Section {
                 Toggle(isOn: $speaker.allowExperimentalWrites) {
                     Text("Allow experimental EQ")
@@ -136,6 +138,31 @@ struct SpeakerSettings: View {
             Button("Forget Speaker", role: .destructive) { speaker.forgetSpeaker() }
         } message: {
             Text("JBLControl will disconnect and won't reconnect to it automatically.")
+        }
+    }
+}
+
+private struct KeepAwakeSection: View {
+    @Environment(KeepAwake.self) private var keepAwake
+
+    var body: some View {
+        @Bindable var keepAwake = keepAwake
+        Section {
+            Toggle(isOn: $keepAwake.isEnabled) {
+                Text("Keep speaker awake")
+                Text("Stops auto power-off by playing a brief, inaudible tone every \(Int(KeepAwake.pingInterval / 60)) minutes while nothing is playing.")
+            }
+            if keepAwake.state == .waitingForOutput {
+                Label("Choose this speaker as your Mac's sound output (Control Center → Sound) for this to work.",
+                      systemImage: "exclamationmark.triangle")
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+            }
+        } header: {
+            Text("Auto power-off")
+        } footer: {
+            Text("Works with any JBL speaker while your Mac is playing to it, not when a phone is the source. "
+                 + "The speaker stays on and keeps using battery until you turn this off.")
         }
     }
 }

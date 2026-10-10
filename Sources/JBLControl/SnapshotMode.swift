@@ -6,7 +6,7 @@ import SwiftUI
 /// connects, optionally selects a preset, renders the panel to a PNG and quits.
 @MainActor
 enum SnapshotMode {
-    static func runIfRequested(_ speaker: SpeakerManager) {
+    static func runIfRequested(_ speaker: SpeakerManager, keepAwake: KeepAwake) {
         let args = CommandLine.arguments
         guard let path = value(after: "--snapshot", in: args) else { return }
         let select = value(after: "--select", in: args).flatMap { UInt8($0, radix: 16) }
@@ -18,7 +18,7 @@ enum SnapshotMode {
                 speaker.select(preset)
                 try? await Task.sleep(for: .seconds(1.5))
             }
-            let host = NSHostingView(rootView: PanelView().environment(speaker))
+            let host = NSHostingView(rootView: PanelView().environment(speaker).environment(keepAwake))
             if let wait = value(after: "--wait", in: args).flatMap(Double.init) {
                 speaker.panelOpened()
                 try? await Task.sleep(for: .seconds(wait))
