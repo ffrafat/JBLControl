@@ -1,12 +1,12 @@
 import JBLControlKit
 import SwiftUI
 
+/// The custom equalizer. Shown only while Custom is selected (or on models without presets):
+/// JBL's presets are fixed tunings, so there's nothing to edit or chart for them.
 struct EqualizerView: View {
     @Environment(SpeakerManager.self) private var speaker
 
     private var specs: [EQBandSpec] { speaker.model?.customBands ?? [] }
-    private var isCustom: Bool { speaker.isCustomActive }
-    private var preset: EQPreset? { isCustom ? nil : speaker.activePreset }
 
     /// Display range in dB: a little headroom past the widest band.
     private var range: ClosedRange<Double> {
@@ -14,11 +14,9 @@ struct EqualizerView: View {
         return -(edge + 1)...(edge + 1)
     }
 
-    /// The active filters, when they're parametric: a preset's published bands, or the custom curve
-    /// on models whose custom EQ is the 7-band parametric one.
+    /// The combined response, on models whose custom EQ is the 7-band parametric one.
     private var curveBands: [EQBand]? {
-        if let preset, !preset.bands.isEmpty { return preset.bands }
-        guard isCustom, let family = speaker.model?.family,
+        guard let family = speaker.model?.family,
               [.legacyParametric, .protocol4Parametric, .protocol4Quantized].contains(family) else { return nil }
         return zip(EQLayouts.parametricShape, speaker.customGains).map { band, gain in
             var b = band
@@ -28,10 +26,7 @@ struct EqualizerView: View {
     }
 
     private func value(at index: Int) -> Double {
-        if let preset, !preset.bands.isEmpty {
-            return EQResponse.gain(at: Double(specs[index].frequency), bands: preset.bands)
-        }
-        return speaker.customGains.indices.contains(index) ? Double(speaker.customGains[index]) : 0
+        speaker.customGains.indices.contains(index) ? Double(speaker.customGains[index]) : 0
     }
 
     var body: some View {
@@ -40,7 +35,7 @@ struct EqualizerView: View {
                 Label("Equalizer", systemImage: "slider.vertical.3")
                     .font(.headline)
                 Spacer()
-                if isCustom && speaker.canWrite {
+                if speaker.canWrite {
                     Button("Reset", systemImage: "arrow.counterclockwise") {
                         withAnimation(.smooth) { speaker.resetCustom() }
                     }
@@ -48,28 +43,24 @@ struct EqualizerView: View {
                     .font(.caption.weight(.medium))
                     .buttonStyle(.glass)
                     .controlSize(.small)
-                } else if let preset {
-                    Text(preset.name)
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(.secondary)
                 }
             }
 
             ZStack {
                 if let curveBands {
                     ResponseCurve(bands: curveBands, frequencies: specs.map(\.frequency), range: range)
-                        .stroke(Theme.accent.opacity(isCustom ? 0.55 : 0.9),
+                        .stroke(Theme.accent.opacity(0.55),
                                 style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
                 }
                 HStack(spacing: 0) {
                     ForEach(specs.indices, id: \.self) { i in
                         BandColumn(index: i, spec: specs[i], value: value(at: i), range: range,
-                                   editable: isCustom && speaker.canWrite)
+                                   editable: speaker.canWrite)
                     }
                 }
             }
             .frame(height: 150)
-            .overlay(alignment: .bottom) { overlayMessage.padding(.bottom, 8) }
+            .overlay(alignment: .bottom) { experimentalPrompt.padding(.bottom, 8) }
 
             HStack(spacing: 0) {
                 ForEach(specs.indices, id: \.self) { i in
@@ -83,24 +74,16 @@ struct EqualizerView: View {
         .glassEffect(.regular, in: .rect(cornerRadius: 22))
     }
 
-    @ViewBuilder private var overlayMessage: some View {
-        if speaker.eq != nil, let model = speaker.model {
-            if !speaker.canWrite {
-                Button("Enable experimental EQ for \(model.shortName)") {
-                    speaker.allowExperimentalWrites = true
-                }
-                .help("EQ changes on this model use JBL's protocol but haven't been tested on hardware yet.")
-                .font(.caption.weight(.medium))
-                .buttonStyle(.glass)
-                .controlSize(.small)
-            } else if !isCustom, let custom = model.pickerPresets.last {
-                Button("Switch to Custom to edit") {
-                    withAnimation(.smooth) { speaker.select(custom) }
-                }
-                .font(.caption.weight(.medium))
-                .buttonStyle(.glass)
-                .controlSize(.small)
+    /// Models not yet confirmed on hardware need an explicit opt-in before EQ writes.
+    @ViewBuilder private var experimentalPrompt: some View {
+        if speaker.eq != nil, !speaker.canWrite, let model = speaker.model {
+            Button("Enable experimental EQ for \(model.shortName)") {
+                speaker.allowExperimentalWrites = true
             }
+            .help("EQ changes on this model use JBL's protocol but haven't been tested on hardware yet.")
+            .font(.caption.weight(.medium))
+            .buttonStyle(.glass)
+            .controlSize(.small)
         }
     }
 }

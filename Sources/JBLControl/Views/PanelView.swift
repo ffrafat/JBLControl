@@ -23,7 +23,13 @@ struct PanelView: View {
                 if model.pickerPresets.count > 1 {
                     PresetPicker().disabled(!ready || !speaker.canWrite)
                 }
-                EqualizerView().disabled(!ready)
+                // Presets are fixed tunings; the equalizer only appears for Custom, so the panel
+                // stays compact otherwise. Models without presets always show it.
+                if speaker.isCustomActive || model.pickerPresets.count <= 1 {
+                    EqualizerView()
+                        .disabled(!ready)
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                }
             } else if speaker.status == .connected {
                 NoEQNotice()
             }
@@ -45,6 +51,7 @@ struct PanelView: View {
         }
         .animation(.smooth, value: toast)
         .animation(.smooth, value: showSwitcher)
+        .animation(.smooth(duration: 0.3), value: speaker.isCustomActive)
         .tint(Theme.accent)
         .onAppear { speaker.panelOpened() }
         .onDisappear { speaker.panelClosed() }
