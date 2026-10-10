@@ -13,6 +13,10 @@ cp "$BIN" "$APP/Contents/MacOS/JBLControl"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
 # A real identity keeps the code requirement stable, so macOS remembers the Bluetooth
 # permission across rebuilds. Falls back to ad-hoc signing when none is available.
+# Release zips are signed ad-hoc: a development certificate would embed your name/email in a public download.
+if [[ " $* " == *" --zip "* ]]; then
+  SIGN_ID="${SIGN_ID:--}"
+fi
 SIGN_ID="${SIGN_ID:-$(security find-identity -v -p codesigning | awk -F'"' '/Apple Development/ {print $2; exit}')}"
 codesign --force --sign "${SIGN_ID:--}" "$APP"
 echo "Built $APP"
