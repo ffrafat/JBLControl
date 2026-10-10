@@ -1,0 +1,35 @@
+name: Device report
+description: Help verify or add support for a JBL speaker
+title: "[Device] JBL <model>"
+labels: ["device-report"]
+body:
+  - type: input
+    id: model
+    attributes:
+      label: Speaker model
+      placeholder: JBL Go 5
+    validations:
+      required: true
+  - type: dropdown
+    id: result
+    attributes:
+      label: What works?
+      multiple: true
+      options:
+        - Connects and shows battery
+        - Shows the right model and color
+        - Presets change the sound
+        - Custom EQ changes the sound
+        - Nothing / doesn't connect
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics
+      description: JBLControl → ••• → Copy Diagnostics, then paste here. MAC address and serial number are already masked.
+      render: markdown
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else?
