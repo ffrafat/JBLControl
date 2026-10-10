@@ -52,31 +52,74 @@ and it hides your speaker's MAC address and serial number.
 
 **Requirements:** macOS 14 Sonoma or later, on Apple Silicon or Intel. On macOS 26 Tahoe and later the panel uses Liquid Glass; on Sonoma and Sequoia it uses the classic translucent look.
 
-### Download
+### Install in 3 steps
 
-1. Download `JBLControl-<version>.zip` from the [latest release](../../releases/latest).
-2. Unzip it and drag **JBLControl.app** into your **Applications** folder.
-3. Open it. JBLControl isn't notarized by Apple yet ([help fix that](#support-the-project)), so macOS blocks
-   the first launch:
-   - macOS shows *"JBLControl" Not Opened*. Click **Done**.
-   - Open **System Settings → Privacy & Security**, scroll down to *"JBLControl" was blocked…* and click
-     **Open Anyway**, then confirm with your password or Touch ID.
+1. **Download** `JBLControl-<version>.dmg` from the [latest release](../../releases/latest).
+2. **Open the DMG** and drag **JBLControl** onto the **Applications** folder.
 
-   Or, in Terminal: `xattr -dr com.apple.quarantine /Applications/JBLControl.app`
-4. When macOS asks whether JBLControl may use **Bluetooth**, click **Allow**. If you missed it, turn it on
-   under **System Settings → Privacy & Security → Bluetooth**.
-5. Turn your speaker on. A speaker icon appears in the menu bar; click it. JBLControl finds nearby JBL speakers
-   by itself. With several around, pick one from **••• → Speakers**.
+   <img src="docs/images/install-dmg.png" width="480" alt="The JBLControl installer window: drag the app onto the Applications folder">
+
+3. **Open JBLControl** from Applications (or Spotlight). The first time, macOS will block it.
+   That's expected; see [below](#if-macos-blocks-jblcontrol) for why and how to allow it.
+   Then click **Allow** when it asks for **Bluetooth**.
+
+A speaker icon appears in the menu bar. Turn your JBL speaker on and click the icon; JBLControl finds it by itself.
 
 > Close the JBL Portable app on your phone if JBLControl can't connect: speakers accept one control
 > connection at a time.
 
 **Start at login:** ••• → **Settings…** → General → **Launch at login**.
 
-**Update:** quit JBLControl (**••• → Quit**), replace the app in Applications with the new one.
+**Update:** quit JBLControl (••• → **Quit**), then install the new DMG the same way and choose **Replace**.
 
-**Uninstall:** quit it, delete `/Applications/JBLControl.app`, and optionally
+**Uninstall:** quit it and drag JBLControl from Applications to the Trash. Optionally also delete
 `~/Library/Caches/io.github.jblcontrol` (cached speaker photos).
+
+### If macOS blocks JBLControl
+
+The first time you open it, macOS shows **"JBLControl" Not Opened** with *"Apple could not verify
+'JBLControl' is free of malware…"*.
+
+**Why this happens.** Every app downloaded from the internet is checked by Gatekeeper, the macOS feature
+that lets an app open straight away only if Apple has *notarized* it. Notarization means the developer
+paid for the Apple Developer Program (US$99 a year) and Apple's servers scanned that build. JBLControl is a
+free, unpaid hobby project, so it isn't notarized [yet](#support-the-project). The warning means Apple
+hasn't checked this build. It doesn't mean macOS found anything wrong with it.
+
+**Is it safe?** Only open software you trust; here's what you can check for this one:
+
+- **All the code is public** in this repository, and each release is built from it with
+  `scripts/build-app.sh`. You can read it, or [build it yourself](#build-from-source).
+- **It doesn't need an account or any personal data.** It uses Bluetooth to talk to your speaker, plus the
+  internet only to check GitHub for new versions and to download speaker photos from jbl.com.
+- **You can check that your download wasn't tampered with.** Each release lists SHA-256 checksums; in
+  Terminal, `shasum -a 256 ~/Downloads/JBLControl-<version>.dmg` should print the same value.
+
+Allowing it is a one-time step for this app only. It doesn't turn Gatekeeper off for anything else.
+
+#### Option A: System Settings (no Terminal)
+
+1. Open JBLControl. When macOS says it can't be opened, click **Done** (not *Move to Trash*).
+2. Open **System Settings → Privacy & Security** and scroll down to **Security**.
+3. Next to *"JBLControl" was blocked to protect your Mac*, click **Open Anyway**.
+4. Confirm with **Open Anyway** and your password or Touch ID.
+
+On **macOS 14 Sonoma** you can instead right-click (or Control-click) JBLControl in Applications,
+choose **Open**, then **Open** again.
+
+#### Option B: Terminal
+
+```bash
+xattr -dr com.apple.quarantine /Applications/JBLControl.app
+```
+
+Then open JBLControl normally.
+
+What it does: when you download a file, macOS tags it with a *quarantine* flag, and Gatekeeper only checks
+apps that carry that flag. This command removes the flag from JBLControl (`-d` deletes the attribute, `-r`
+applies it to everything inside the app). It changes nothing else on your Mac and doesn't turn off Gatekeeper.
+Don't use commands such as `sudo spctl --master-disable` that you may see suggested online: they turn off
+Gatekeeper for every app.
 
 ### Build from source
 
