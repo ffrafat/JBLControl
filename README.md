@@ -1,6 +1,20 @@
-# JBLControl
+<p align="center">
+  <img src="docs/images/icon.png" width="128" alt="JBLControl icon">
+</p>
 
-**JBL speaker control, right in your menu bar.**
+<h1 align="center">JBLControl</h1>
+
+<p align="center"><b>JBL speaker control, right in your menu bar.</b></p>
+
+<p align="center">
+  <a href="../../releases/latest"><img src="https://img.shields.io/github/v/release/ffrafat/JBLControl?label=download" alt="Latest release"></a>
+  <img src="https://img.shields.io/badge/macOS-26%2B-blue" alt="macOS 26+">
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/ffrafat/JBLControl" alt="MIT license"></a>
+</p>
+
+<p align="center">
+  <img src="docs/images/screenshot.png" width="400" alt="JBLControl's menu bar panel: a JBL Flip 7 with battery level, EQ presets and the Energetic response curve">
+</p>
 
 Battery level, EQ presets and a custom equalizer for JBL Flip, Charge, Xtreme, Go, Clip, Pulse, Boombox and
 more, in a native Liquid Glass panel for macOS. No phone, no JBL Portable app.
@@ -87,6 +101,7 @@ JBLControl speaks the same protocol as JBL's own app. There are two generations,
 | `Sources/JBLControlKit` | Protocol library: frame codecs, EQ codecs per family, model catalog. No UI, fully tested |
 | `Sources/JBLControl` | The menu bar app: CoreBluetooth, SwiftUI panel, diagnostics |
 | `scripts/generate-catalog.py` | Regenerates the model catalog from the JBL app's model data |
+| `scripts/make-icon.py` | Regenerates the Liquid Glass app icon (`Resources/AppIcon.icon`, opens in Icon Composer) |
 | `Tools/Probe` | Standalone read-only BLE probe for reverse-engineering new models |
 
 ## Contributing
