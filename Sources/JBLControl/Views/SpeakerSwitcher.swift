@@ -7,7 +7,15 @@ struct SpeakerSwitcher: View {
     @Namespace private var glass
 
     var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
+        // Centered when the chips fit; scrolls sideways when there are many.
+        ViewThatFits(in: .horizontal) {
+            chips
+            ScrollView(.horizontal, showsIndicators: false) { chips }
+                .scrollClipDisabled()
+        }
+    }
+
+    private var chips: some View {
             AdaptiveGlassContainer(spacing: 6) {
                 HStack(spacing: 6) {
                     ForEach(speaker.switchable) { s in
@@ -39,8 +47,6 @@ struct SpeakerSwitcher: View {
                 }
                 .padding(.vertical, 2)
             }
-        }
-        .scrollClipDisabled()
     }
 
     /// Advertised names are truncated ("FFR JBL Fli"); fall back to the model name when that reads better.

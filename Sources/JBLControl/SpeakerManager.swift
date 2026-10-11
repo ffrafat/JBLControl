@@ -50,6 +50,8 @@ final class SpeakerManager: NSObject {
     var isCustomActive: Bool { eq != nil && eq?.activeCategory == model?.customCategory }
     var canWrite: Bool { model.map { !$0.writesNeedOptIn || allowExperimentalWrites } ?? false }
     var connectedID: UUID? { status == .connected ? peripheral?.identifier : nil }
+    /// Advertised name of the speaker currently being connected to.
+    var connectingName: String? { discovered.first { $0.id == peripheral?.identifier }?.name }
     /// The speaker being controlled or connected to.
     var activeID: UUID? { peripheral?.identifier }
     /// Nearby speakers the user can switch to (supported models, strongest signal first).
@@ -73,6 +75,9 @@ final class SpeakerManager: NSObject {
     @ObservationIgnored private var browsing = false
     @ObservationIgnored private var lowBatteryNotified = false
     @ObservationIgnored private var ignoredAliases: Set<UUID> = []
+    @ObservationIgnored private var lastSeen: [UUID: Date] = [:]
+    @ObservationIgnored private var pruneTask: Task<Void, Never>?
+    private static let silenceLimit: TimeInterval = 12
     @ObservationIgnored private(set) var gattSummary: [String] = []
 
     private struct Outgoing {
@@ -93,6 +98,12 @@ final class SpeakerManager: NSObject {
     override init() {
         super.init()
         central = CBCentralManager(delegate: self, queue: .main)
+        pruneTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(4))
+                self?.pruneSilentSpeakers()
+            }
+        }
     }
 
     private var codec: EQCodec? { model.map(EQCodec.init) }
@@ -177,7 +188,20 @@ final class SpeakerManager: NSObject {
     /// identifier can go stale and only a fresh advertisement leads back to it.
     private func scan() {
         central.stopScan()
-        central.scanForPeripherals(withServices: nil, options: [CBCentralManagerScanOptionAllowDuplicatesKey: false])
+        // While searching or while the panel is open, keep hearing every advertisement so speakers
+        // that go quiet (switched off) can drop off the list. Otherwise one report per speaker is enough.
+        let continuous = status != .connected || browsing
+        central.scanForPeripherals(withServices: nil, options: [CBCentralManagerScanOptionAllowDuplicatesKey: continuous])
+    }
+
+    /// Drops speakers that haven't advertised for a while (they were switched off or moved away).
+    private func pruneSilentSpeakers() {
+        let cutoff = Date.now.addingTimeInterval(-Self.silenceLimit)
+        // Only the connected speaker is exempt; one we're merely trying to reach may be switched off.
+        let silent = discovered.filter { $0.id != connectedID && (lastSeen[$0.id] ?? .distantPast) < cutoff }
+        guard !silent.isEmpty else { return }
+        let ids = Set(silent.map(\.id))
+        discovered.removeAll { ids.contains($0.id) }
     }
 
     private func connect(_ p: CBPeripheral) {
@@ -217,6 +241,11 @@ final class SpeakerManager: NSObject {
         guard let savedName = d.string(forKey: Saved.name) else { return nil }
         let savedPID = (d.object(forKey: Saved.productID) as? Int).map(UInt16.init)
         return SpeakerIdentity.matches(name: s.name, productID: s.productID, name: savedName, productID: savedPID)
+    }
+
+    /// Forget what the last speaker reported, so none of it shows for whichever speaker connects next.
+    private func clearDeviceInfo() {
+        name = nil; colorCode = nil; battery = nil; isCharging = false; firmware = nil; eq = nil
     }
 
     private func clearDeviceState() {
@@ -388,6 +417,7 @@ extension SpeakerManager: @preconcurrency CBCentralManagerDelegate {
         default:
             status = .bluetoothOff
             clearDeviceState()
+            clearDeviceInfo()
         }
     }
 
@@ -406,6 +436,7 @@ extension SpeakerManager: @preconcurrency CBCentralManagerDelegate {
         for (key, value) in serviceData { summary["serviceData.\(key.uuidString)"] = value.hex }
         var speaker = DiscoveredSpeaker(peripheral: p, name: advertisedName, productID: pid,
                                         rssi: rssi.intValue, advertisement: summary)
+        lastSeen[p.identifier] = .now
         if let old = discovered.first(where: { $0.id == p.identifier }) {
             speaker.productID = pid ?? old.productID
             if advertisedName.isEmpty { speaker.name = old.name }
@@ -416,7 +447,9 @@ extension SpeakerManager: @preconcurrency CBCentralManagerDelegate {
                 log.info("\(speaker.name, privacy: .public) is also advertising as \(p.identifier, privacy: .public); same speaker")
                 ignoredAliases.insert(p.identifier)
             }
-            discovered.removeAll { $0.id == p.identifier }
+            if discovered.contains(where: { $0.id == p.identifier }) {
+                discovered.removeAll { $0.id == p.identifier }
+            }
             return
         }
         if let i = discovered.firstIndex(where: { $0.id == p.identifier }) {
@@ -425,15 +458,24 @@ extension SpeakerManager: @preconcurrency CBCentralManagerDelegate {
             speaker.productID = pid ?? old.productID
             if advertisedName.isEmpty { speaker.name = old.name }
             speaker.advertisement = old.advertisement.merging(summary) { _, new in new }
-            discovered[i] = speaker
+            // Repeated advertisements mostly differ in signal strength; skip those to avoid redrawing.
+            let changed = old.name != speaker.name || old.productID != speaker.productID
+                || old.advertisement.filter { $0.key != "rssi" } != speaker.advertisement.filter { $0.key != "rssi" }
+            if changed { discovered[i] = speaker }
         } else {
             log.info("found \(advertisedName, privacy: .public) pid \(pid ?? 0, format: .hex)")
             discovered.append(speaker)
         }
         // The same speaker seen earlier under an older address: keep only the newest sighting.
-        discovered.removeAll { $0.id != p.identifier && $0.id != activeID && $0.isSameSpeaker(as: speaker) }
+        if discovered.contains(where: { $0.id != p.identifier && $0.id != activeID && $0.isSameSpeaker(as: speaker) }) {
+            discovered.removeAll { $0.id != p.identifier && $0.id != activeID && $0.isSameSpeaker(as: speaker) }
+        }
 
         // Auto-connect: the remembered speaker, or the first supported one when none is remembered.
+        if let pending = peripheral, pending.identifier != p.identifier,
+           let seen = lastSeen[pending.identifier], Date.now.timeIntervalSince(seen) < 5 {
+            return  // still trying an address that's on air; don't flip-flop between aliases
+        }
         guard autoConnect, status != .connected, peripheral?.identifier != p.identifier,
               let model = speaker.model, model.support != .unsupported else { return }
         switch isRemembered(speaker) {
@@ -464,6 +506,7 @@ extension SpeakerManager: @preconcurrency CBCentralManagerDelegate {
         guard p.identifier == peripheral?.identifier else { return }
         log.notice("disconnected: \(error?.localizedDescription ?? "no error", privacy: .public)")
         clearDeviceState()
+        clearDeviceInfo()
         connect(p)
         scan()
     }

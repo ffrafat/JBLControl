@@ -7,20 +7,25 @@ struct PanelView: View {
     @Environment(KeepAwake.self) private var keepAwake
     @State private var toast: String?
 
-    private var ready: Bool { speaker.status == .connected && speaker.eq != nil }
-    /// Several speakers nearby, or none connected (e.g. auto-connect is off): offer the choice.
-    private var showSwitcher: Bool {
-        speaker.switchable.count > 1 || (speaker.activeID == nil && !speaker.switchable.isEmpty)
-    }
+    private var connected: Bool { speaker.status == .connected }
+    private var ready: Bool { connected && speaker.eq != nil }
+    /// While connected, offer switching only when there's another speaker to switch to.
+    private var showSwitcher: Bool { connected && speaker.switchable.count > 1 }
 
     var body: some View {
         VStack(spacing: 14) {
-            if showSwitcher {
-                SpeakerSwitcher()
+            if !connected {
+                // Compact: no details of a previous speaker, since a different one may connect.
+                SearchingView()
                     .transition(.opacity)
+            } else {
+                if showSwitcher {
+                    SpeakerSwitcher()
+                        .transition(.opacity)
+                }
+                HeaderView()
             }
-            HeaderView()
-            if let model = speaker.model, model.hasEQ {
+            if connected, let model = speaker.model, model.hasEQ {
                 if model.pickerPresets.count > 1 {
                     PresetPicker().disabled(!ready || !speaker.canWrite)
                 }
@@ -55,6 +60,7 @@ struct PanelView: View {
         }
         .animation(.smooth, value: toast)
         .animation(.smooth, value: showSwitcher)
+        .animation(.smooth(duration: 0.3), value: connected)
         .animation(.smooth(duration: 0.3), value: speaker.isCustomActive)
         .animation(.smooth, value: keepAwake.state)
         .tint(Theme.accent)
