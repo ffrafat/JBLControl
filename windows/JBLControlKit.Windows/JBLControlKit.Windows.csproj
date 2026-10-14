@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Pure protocol + model catalog: no WinRT/Windows dependency, fully unit-testable. -->
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>JBLControlKit.Windows</RootNamespace>
+  </PropertyGroup>
+
+</Project>

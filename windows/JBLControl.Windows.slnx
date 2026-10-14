@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="JBLControl.Windows/JBLControl.Windows.csproj" />
+  <Project Path="JBLControlKit.Windows.Tests/JBLControlKit.Windows.Tests.csproj" />
+  <Project Path="JBLControlKit.Windows/JBLControlKit.Windows.csproj" />
+</Solution>

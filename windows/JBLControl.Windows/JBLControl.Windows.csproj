@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Phase 2: a console harness exercising the real BLE connection (Windows.Devices.Bluetooth)
+    against JBLControlKit.Windows, with plain console output instead of UI. Phase 4 replaces
+    this entry point with the real WinUI 3 app (Microsoft.WindowsAppSDK, tray icon, flyout
+    panel) per windows port plan section 5 — SpeakerManager itself carries forward mostly as-is.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+    <RootNamespace>JBLControl.Windows</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\JBLControlKit.Windows\JBLControlKit.Windows.csproj" />
+  </ItemGroup>
+
+</Project>

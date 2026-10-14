@@ -4,3 +4,9 @@ build/
 *.xcodeproj
 DerivedData/
 .DS_Store
+
+# Windows (C# / WinUI 3)
+windows/**/bin/
+windows/**/obj/
+windows/build/
+windows/.vs/
