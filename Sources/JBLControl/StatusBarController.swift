@@ -35,16 +35,22 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
     }
 
     @objc private func toggle() {
-        guard let button = item.button else { return }
         if popover.isShown {
             popover.performClose(nil)
         } else {
-            popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
-            let window = popover.contentViewController?.view.window
-            window?.makeKey()
-            // Don't hand keyboard focus to the first control (it would draw a focus ring on open).
-            window?.makeFirstResponder(nil)
+            showPanel()
         }
+    }
+
+    /// Opens the panel under the menu bar icon (also used when the app is opened again while running).
+    func showPanel() {
+        guard let button = item.button, !popover.isShown else { return }
+        NSApp.activate()
+        popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+        let window = popover.contentViewController?.view.window
+        window?.makeKey()
+        // Don't hand keyboard focus to the first control (it would draw a focus ring on open).
+        window?.makeFirstResponder(nil)
     }
 
     // MARK: NSPopoverDelegate
