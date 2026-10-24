@@ -9,19 +9,14 @@
     {
       "layers": [
         {
-          "image-name": "bars.svg",
-          "name": "bars",
-          "glass": false
-        },
-        {
-          "image-name": "badge.svg",
-          "name": "badge",
+          "image-name": "controls.svg",
+          "name": "eq",
           "glass": true
         }
       ],
       "shadow": {
         "kind": "neutral",
-        "opacity": 0.5
+        "opacity": 0.4
       },
       "translucency": {
         "enabled": false,
@@ -31,40 +26,8 @@
     {
       "layers": [
         {
-          "image-name": "hub.svg",
-          "name": "hub",
-          "glass": true
-        },
-        {
-          "image-name": "radiator.svg",
-          "name": "radiator",
-          "glass": true
-        },
-        {
-          "image-name": "endcap.svg",
-          "name": "endcap",
-          "glass": true
-        }
-      ],
-      "shadow": {
-        "kind": "neutral",
-        "opacity": 0.5
-      },
-      "translucency": {
-        "enabled": true,
-        "value": 0.2
-      }
-    },
-    {
-      "layers": [
-        {
-          "image-name": "bumper.svg",
-          "name": "bumper",
-          "glass": true
-        },
-        {
           "image-name": "body.svg",
-          "name": "body",
+          "name": "speaker",
           "glass": true
         }
       ],
@@ -74,7 +37,7 @@
       },
       "translucency": {
         "enabled": true,
-        "value": 0.2
+        "value": 0.15
       }
     }
   ],

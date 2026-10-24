@@ -1,63 +1,67 @@
 #!/usr/bin/env python3
 """Generate Resources/AppIcon.icon, the app's Liquid Glass icon (Icon Composer format).
 
-A black Flip-style speaker seen at three-quarters, passive radiator on its end cap and an
-orange logo plate carrying EQ bars, on a sunset gradient. Usage: scripts/make-icon.py
+A graphite speaker (Resources/Icon/speaker-shape.svg) with the gap under its handle cut through, three
+EQ sliders with orange knobs on its front, on the sunset gradient. Usage: scripts/make-icon.py
 The result opens in Icon Composer for fine-tuning; build-app.sh compiles it with actool.
 """
 
-import json, os
+import json
+import os
+import re
 
-TILT = 'transform="rotate(-10 512 520)"'
-XL, XR, CY, RY, RX = 196, 806, 520, 172, 78   # cylinder axis ends, center y, radius, end-face perspective
+ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
+SOURCE = os.path.join(ROOT, "Resources/Icon/speaker-shape.svg")
+OUT = os.path.join(ROOT, "Resources/AppIcon.icon")
 
-def svg(inner):
-    return f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024"><g {TILT}>{inner}</g></svg>'
+# The source is a 1200×592 stencil: a rectangle with the speaker cut out (path 1), plus the handle gap (path 2).
+outer, handle_gap = re.findall(r'<path d="([^"]+)"', open(SOURCE).read())
+outline = outer[outer.index("M", 1):]  # drop the surrounding rectangle, keep the speaker outline
 
-def make(name, d_out, body, face, radiator, hub, badge, gradient):
-    d = os.path.join(d_out, f"{name}.icon"); os.makedirs(f"{d}/Assets", exist_ok=True)
-    top, bot = CY - RY, CY + RY
-    files = {
-        # Fabric-covered body: straight top/bottom, rounded far end.
-        "body.svg": svg(f'<path d="M{XL},{top} L{XR},{top} L{XR},{bot} L{XL},{bot} A{RX},{RY} 0 0 1 {XL},{top} Z" fill="{body}"/>'),
-        # Near end cap: rubber bumper face with the passive radiator.
-        "endcap.svg": svg(f'<ellipse cx="{XR}" cy="{CY}" rx="{RX}" ry="{RY}" fill="{face}"/>'),
-        "radiator.svg": svg(f'<ellipse cx="{XR}" cy="{CY}" rx="{RX*0.66:.0f}" ry="{RY*0.66:.0f}" fill="{radiator}"/>'),
-        "hub.svg": svg(f'<ellipse cx="{XR}" cy="{CY}" rx="{RX*0.28:.0f}" ry="{RY*0.28:.0f}" fill="{hub}"/>'),
-        # Logo plate on the side, with EQ bars instead of a wordmark.
-        "badge.svg": svg(f'<rect x="{(XL+XR)/2-148:.0f}" y="{CY-78}" width="296" height="156" rx="38" fill="{badge}"/>'),
-        "bars.svg": svg("".join(
-            f'<rect x="{(XL+XR)/2-108+i*48:.0f}" y="{CY+48-h}" width="28" height="{h}" rx="14" fill="#FFFFFF"/>'
-            for i, h in enumerate((42, 72, 100, 62, 84)))),
-        # Rubber bumper on the far end.
-        "bumper.svg": svg(f'<path d="M{XL+34},{top-2} L{XL+6},{top-2} A{RX},{RY+2} 0 0 0 {XL+6},{bot+2} L{XL+34},{bot+2} Z" fill="{face}"/>'),
-    }
-    for f, c in files.items(): open(f"{d}/Assets/{f}", "w").write(c)
-    shadow = {"kind": "neutral", "opacity": 0.5}
+SCALE = 0.80
+TX, TY = (1024 - 1200 * SCALE) / 2, (1024 - 592 * SCALE) / 2 + 10
+
+
+def doc(inner):
+    return f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">{inner}</svg>'
+
+
+def canvas(x, y):
+    """Artwork coordinates → icon canvas."""
+    return TX + x * SCALE, TY + y * SCALE
+
+
+def eq_sliders():
+    cx, cy = canvas(600, 345)  # centre of the speaker's front
+    parts = []
+    for i, knob in enumerate((-44, 50, -11)):
+        x = cx + (i - 1) * 122
+        parts.append(f'<rect x="{x - 10:.0f}" y="{cy - 105:.0f}" width="20" height="210" rx="10" fill="#FFFFFF" fill-opacity="0.85"/>')
+        parts.append(f'<circle cx="{x:.0f}" cy="{cy + knob:.0f}" r="33" fill="#FF6A1F"/>')
+    return "".join(parts)
+
+
+def main():
+    os.makedirs(os.path.join(OUT, "Assets"), exist_ok=True)
+    body = f'<g transform="translate({TX:.1f} {TY:.1f}) scale({SCALE})">' \
+           f'<path d="{outline} {handle_gap}" fill="#4A4A50" fill-rule="evenodd"/></g>'
+    open(os.path.join(OUT, "Assets/body.svg"), "w").write(doc(body))
+    open(os.path.join(OUT, "Assets/controls.svg"), "w").write(doc(eq_sliders()))
+
+    p3 = lambda r, g, b: f"display-p3:{r:.5f},{g:.5f},{b:.5f},1.00000"
     icon = {
-        "fill": {"linear-gradient": gradient},
+        "fill": {"linear-gradient": [p3(1.00, 0.58, 0.16), p3(0.90, 0.18, 0.20)]},
         "groups": [
-            {"layers": [{"image-name": "bars.svg", "name": "bars", "glass": False},
-                        {"image-name": "badge.svg", "name": "badge", "glass": True}],
-             "shadow": shadow, "translucency": {"enabled": False, "value": 0}},
-            {"layers": [{"image-name": "hub.svg", "name": "hub", "glass": True},
-                        {"image-name": "radiator.svg", "name": "radiator", "glass": True},
-                        {"image-name": "endcap.svg", "name": "endcap", "glass": True}],
-             "shadow": shadow, "translucency": {"enabled": True, "value": 0.2}},
-            {"layers": [{"image-name": "bumper.svg", "name": "bumper", "glass": True},
-                        {"image-name": "body.svg", "name": "body", "glass": True}],
-             "shadow": shadow, "translucency": {"enabled": True, "value": 0.2}},
+            {"layers": [{"image-name": "controls.svg", "name": "eq", "glass": True}],
+             "shadow": {"kind": "neutral", "opacity": 0.4}, "translucency": {"enabled": False, "value": 0}},
+            {"layers": [{"image-name": "body.svg", "name": "speaker", "glass": True}],
+             "shadow": {"kind": "neutral", "opacity": 0.5}, "translucency": {"enabled": True, "value": 0.15}},
         ],
         "supported-platforms": {"squares": ["macOS"]},
     }
-    json.dump(icon, open(f"{d}/icon.json", "w"), indent=2)
-    return d
+    json.dump(icon, open(os.path.join(OUT, "icon.json"), "w"), indent=2)
+    print("wrote", os.path.relpath(OUT, ROOT))
 
-p3 = lambda r, g, b: f"display-p3:{r:.5f},{g:.5f},{b:.5f},1.00000"
-SUNSET = [p3(1.00, 0.58, 0.16), p3(0.90, 0.18, 0.20)]
 
 if __name__ == "__main__":
-    root = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "Resources")
-    path = make("AppIcon", root, body="#1E1E22", face="#3A3A40", radiator="#121214", hub="#4A4A52",
-                badge="#FF5A1F", gradient=SUNSET)
-    print("wrote", os.path.relpath(path))
+    main()
