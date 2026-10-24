@@ -1,6 +1,6 @@
 name: Device report
 description: Help verify or add support for a JBL speaker
-title: "[Device] JBL <model>"
+title: "[Device] "
 labels: ["device-report"]
 body:
   - type: input

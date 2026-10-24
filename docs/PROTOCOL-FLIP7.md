@@ -72,6 +72,19 @@ Verified behaviour:
 Custom editor limits (from the JBL app): band 1 −9…+6 dB (0.75 dB steps below 0, 0.5 above), bands 2–7 ±6 dB in 0.5 dB steps.
 Frequencies 125/250/500/1k/2k/4k/8k, Q 0.707 on the shelves and 2 on the peaks.
 
+## JBL Charge 5 (bass / mid / treble family)
+
+Verified from a device report ([#1](https://github.com/ffrafat/JBLControl/issues/1), thanks @shortrockerz):
+PID `2040`, firmware `0.8.9.0`, macOS 15.7.9. Same control service and `AA 11` info tokens as the Flip 7;
+battery `94` = charging, 20%.
+
+- `AA 6C 01 00` (simple EQ) → `AA 6D 12 | 02 01 | 01 03 (1:00 2:00 3:00) | C1 03 (1:00 2:00 3:00)`:
+  scope `02`, active `01`, then each category with bass (1), mid (2) and treble (3) as signed levels.
+  The 18-byte reply arrived split across two notifications.
+- `AA 6E 08 C1 03 01 bb 02 mm 03 tt` sets the custom curve and selects it; answered by DEV_ACK `AA 00 02 6E 00`.
+  The reporter confirmed the change is audible.
+- `AA 61 00` (EQ mode) is supported here (`AA 62 01 00`), unlike the Flip 7. `AA 98 00 00` is rejected (`EE`).
+
 ## Not yet mapped
 
 Playtime Boost, feedback tones, Auracast, auto standby. Next step: capture JBL Portable on an iPhone with
