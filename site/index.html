@@ -64,7 +64,7 @@
     font-family: var(--body); font-size: 17px; line-height: 1.6;
     -webkit-font-smoothing: antialiased;
   }
-  img { max-width: 100%; display: block; }
+  img { max-width: 100%; height: auto; display: block; }
   a { color: inherit; }
   .wrap { max-width: 1120px; margin: 0 auto; padding-inline: 20px; }
   h1, h2, h3 { font-family: var(--display); line-height: 1.08; margin: 0; text-wrap: balance; letter-spacing: -0.02em; }
@@ -108,6 +108,8 @@
   .meta-row { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 14px; color: var(--muted); }
   .meta-row span { display: inline-flex; align-items: center; gap: 6px; }
   .meta-row svg { width: 16px; height: 16px; color: var(--accent); }
+  .meta-row a { color: var(--accent); font-weight: 600; text-decoration: none; }
+  .meta-row a:hover { text-decoration: underline; }
 
   /* The stage the panel sits on: sunset gradient, speaker-grille dots, a dB scale. */
   .stage { position: relative; border-radius: 32px; padding: 40px 32px 0; min-height: 560px; overflow: hidden;
@@ -233,19 +235,23 @@
     <div class="wrap hero-grid">
       <div class="hero-copy">
         <p class="eyebrow">Free · Open source · Mac &amp; Windows</p>
-        <h1>JBL speaker control, <span class="warm">right in your menu bar.</span></h1>
+        <h1>JBL speaker control, <span class="warm" id="where">right in your menu bar.</span></h1>
         <p class="lede">Battery, JBL's EQ presets and a 7-band custom equalizer for Flip, Charge, Xtreme, Go, Clip and more — from your Mac's menu bar or the Windows tray. No phone, no JBL app, no account.</p>
-        <div class="cta-row">
-          <a class="btn btn-primary" id="primary-download" href="https://github.com/ffrafat/JBLControl/releases/latest">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19h14"/></svg>
-            <span id="primary-label">Download</span>
+        <div class="cta-row" id="hero-downloads">
+          <a class="btn btn-primary" id="dl-mac" data-asset="mac" href="https://github.com/ffrafat/JBLControl/releases/latest">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.4 12.6c0-2.4 2-3.5 2-3.6-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.1-2.8.9-3.5.9s-1.8-.9-3-.8C7 7.3 5.6 8.2 4.8 9.6c-1.6 2.8-.4 7 1.2 9.3.8 1.1 1.7 2.4 2.9 2.3 1.2 0 1.6-.7 3-.7s1.8.7 3 .7c1.3 0 2.1-1.1 2.8-2.3.9-1.3 1.3-2.6 1.3-2.6-.1 0-2.6-1-2.6-3.7ZM14.2 5.6c.6-.8 1-1.8.9-2.9-.9 0-2 .6-2.7 1.4-.6.7-1.1 1.8-1 2.8 1 .1 2.1-.5 2.8-1.3Z"/></svg>
+            Download for Mac
           </a>
-          <a class="btn btn-ghost" id="secondary-download" href="https://github.com/ffrafat/JBLControl/releases/latest">All downloads</a>
+          <a class="btn btn-ghost" id="dl-win" data-asset="win-x64" href="https://github.com/ffrafat/JBLControl/releases/latest">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 5.4 10.4 4.4v7.1H3Zm0 13.2 7.4 1v-7H3Zm8.3 1.1L21 21v-8.4h-9.7Zm0-15.4v7.2H21V3Z"/></svg>
+            <span id="dl-win-label">Download for Windows</span>
+          </a>
         </div>
         <div class="meta-row">
           <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span id="version">Latest release</span></span>
           <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>macOS 14+ · Windows 10 &amp; 11</span>
           <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>MIT licensed</span>
+          <a id="all-downloads" href="https://github.com/ffrafat/JBLControl/releases/latest">Arm64, portable zips &amp; checksums →</a>
         </div>
       </div>
 
@@ -473,9 +479,18 @@
       if (platform === "win-x64" && hints?.architecture === "arm") platform = "win-arm64";
     } catch {}
 
-    const labels = { "mac": "Download for Mac", "win-x64": "Download for Windows", "win-arm64": "Download for Windows (Arm)" };
-    const primaryLabel = document.getElementById("primary-label");
-    if (platform) primaryLabel.textContent = labels[platform];
+    // Windows visitors get their button first and highlighted, and a headline about the tray.
+    if (platform?.startsWith("win")) {
+      const mac = document.getElementById("dl-mac"), win = document.getElementById("dl-win");
+      mac.classList.replace("btn-primary", "btn-ghost");
+      win.classList.replace("btn-ghost", "btn-primary");
+      win.after(mac);
+      document.getElementById("where").textContent = "right in your system tray.";
+      if (platform === "win-arm64") {
+        win.dataset.asset = "win-arm64";
+        document.getElementById("dl-win-label").textContent = "Download for Windows (Arm)";
+      }
+    }
 
     let release;
     try {
@@ -494,8 +509,7 @@
       const key = a.dataset.asset === "auto" ? platform : a.dataset.asset;
       if (key && urls[key]) a.href = urls[key];
     });
-    if (platform && urls[platform]) document.getElementById("primary-download").href = urls[platform];
-    document.getElementById("secondary-download").href = release.html_url;
+    document.getElementById("all-downloads").href = release.html_url;
     document.getElementById("version").textContent = `Version ${release.tag_name.replace(/^v/, "")}`;
   })();
 </script>
