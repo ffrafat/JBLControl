@@ -2,46 +2,6 @@ import AppKit
 import JBLControlKit
 import SwiftUI
 
-/// Settings in a native toolbar-tab window. Built in AppKit because the panel lives in a
-/// popover outside SwiftUI's scenes, where SwiftUI's `openSettings` isn't available.
-@MainActor
-final class SettingsWindowController {
-    static let shared = SettingsWindowController()
-    private var window: NSWindow?
-
-    func show(_ speaker: SpeakerManager, keepAwake: KeepAwake) {
-        if window == nil { window = makeWindow(speaker, keepAwake) }
-        NSApp.activate()
-        window?.makeKeyAndOrderFront(nil)
-    }
-
-    private func makeWindow(_ speaker: SpeakerManager, _ keepAwake: KeepAwake) -> NSWindow {
-        let tabs = NSTabViewController()
-        tabs.tabStyle = .toolbar
-        tabs.transitionOptions = [.allowUserInteraction]
-        func add<V: View>(_ title: String, _ symbol: String, _ view: V) {
-            let host = NSHostingController(rootView: view.environment(speaker).environment(keepAwake)
-                .tint(Theme.accent).frame(width: 480))
-            host.sizingOptions = [.preferredContentSize]
-            let item = NSTabViewItem(viewController: host)
-            item.label = title
-            item.image = NSImage(systemSymbolName: symbol, accessibilityDescription: title)
-            tabs.addTabViewItem(item)
-        }
-        add("General", "gearshape", GeneralSettings())
-        add("Speaker", "hifispeaker", SpeakerSettings())
-        add("Updates", "arrow.down.circle", UpdateSettings())
-        add("About", "info.circle", AboutSettings())
-
-        let window = NSWindow(contentViewController: tabs)
-        window.styleMask = [.titled, .closable]
-        window.title = "Settings"
-        window.isReleasedWhenClosed = false
-        window.center()
-        return window
-    }
-}
-
 // MARK: - General
 
 struct GeneralSettings: View {

@@ -165,7 +165,7 @@
   .platform dt { color: var(--muted); }
   .platform dd { margin: 0; }
   .platform .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
-  /* Each card leads with its app, portrait (Mac panel) or landscape (Windows window), at one height. */
+  /* Each card leads with its app's window, at one height. */
   .platform .shot { margin: -8px -8px 6px; height: 280px; padding: 18px; border-radius: 16px; display: flex; justify-content: center; align-items: center;
                     background: color-mix(in srgb, var(--line) 45%, transparent); }
   .platform .shot img { height: 100%; width: auto; max-width: 100%; object-fit: contain; }
@@ -241,7 +241,7 @@
       <div class="hero-copy">
         <p class="eyebrow">Free · Open source · Mac &amp; Windows</p>
         <h1>JBL speaker control, <span class="warm" id="where">right in your menu bar.</span></h1>
-        <p class="lede">Battery, JBL's EQ presets and a 7-band custom equalizer for Flip, Charge, Xtreme, Go, Clip and more — from your Mac's menu bar or the Windows tray. No phone, no JBL app, no account.</p>
+        <p class="lede">Battery, JBL's EQ presets and a 7-band custom equalizer for Flip, Charge, Xtreme, Go, Clip and more — in an app window, or one click away in your Mac's menu bar or the Windows tray. No phone, no JBL app, no account.</p>
         <div class="cta-row" id="hero-downloads">
           <a class="btn btn-primary" id="dl-mac" data-asset="mac" href="https://github.com/ffrafat/JBLControl/releases/latest">
             <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.4 12.6c0-2.4 2-3.5 2-3.6-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.1-2.8.9-3.5.9s-1.8-.9-3-.8C7 7.3 5.6 8.2 4.8 9.6c-1.6 2.8-.4 7 1.2 9.3.8 1.1 1.7 2.4 2.9 2.3 1.2 0 1.6-.7 3-.7s1.8.7 3 .7c1.3 0 2.1-1.1 2.8-2.3.9-1.3 1.3-2.6 1.3-2.6-.1 0-2.6-1-2.6-3.7ZM14.2 5.6c.6-.8 1-1.8.9-2.9-.9 0-2 .6-2.7 1.4-.6.7-1.1 1.8-1 2.8 1 .1 2.1-.5 2.8-1.3Z"/></svg>
@@ -333,25 +333,25 @@
       <div class="section-head">
         <p class="eyebrow">Mac &amp; Windows</p>
         <h2>Native on both.</h2>
-        <p class="lede">Not a web wrapper: an AppKit and SwiftUI menu bar app on the Mac, a WinUI 3 tray app on Windows, both built on the same protocol research and test cases.</p>
+        <p class="lede">Not a web wrapper: AppKit and SwiftUI on the Mac, WinUI 3 on Windows. Each has a main window plus a compact panel in the menu bar or tray, built on the same protocol research and test cases.</p>
       </div>
       <div class="platforms">
         <article class="card platform">
           <div class="shot">
-            <img src="images/mac-panel.png" width="864" height="1132" loading="lazy"
-                 alt="JBLControl's menu bar panel on a Mac, with the custom equalizer">
+            <img src="images/mac-app.png" width="1558" height="1165" loading="lazy"
+                 alt="JBLControl's window on a Mac: the speaker in the sidebar, presets, and the custom 7-band equalizer">
           </div>
           <header>
             <div class="os">
               <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.4 12.6c0-2.4 2-3.5 2-3.6-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.1-2.8.9-3.5.9s-1.8-.9-3-.8C7 7.3 5.6 8.2 4.8 9.6c-1.6 2.8-.4 7 1.2 9.3.8 1.1 1.7 2.4 2.9 2.3 1.2 0 1.6-.7 3-.7s1.8.7 3 .7c1.3 0 2.1-1.1 2.8-2.3.9-1.3 1.3-2.6 1.3-2.6-.1 0-2.6-1-2.6-3.7ZM14.2 5.6c.6-.8 1-1.8.9-2.9-.9 0-2 .6-2.7 1.4-.6.7-1.1 1.8-1 2.8 1 .1 2.1-.5 2.8-1.3Z"/></svg>
               <h3>Mac</h3>
             </div>
-            <span class="pill">menu bar app</span>
+            <span class="pill">window + menu bar</span>
           </header>
           <dl>
             <dt>Requires</dt><dd>macOS 14 Sonoma or later</dd>
             <dt>Runs on</dt><dd>Apple Silicon and Intel</dd>
-            <dt>Looks</dt><dd>Liquid Glass on macOS 26 Tahoe, classic translucency on Sonoma and Sequoia</dd>
+            <dt>Looks</dt><dd>A main window and a menu bar panel; Liquid Glass on macOS 26 Tahoe, classic translucency on Sonoma and Sequoia</dd>
             <dt>Install</dt><dd>DMG: drag to Applications</dd>
           </dl>
           <div class="actions">

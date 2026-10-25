@@ -24,9 +24,9 @@ struct SpeakerSwitcher: View {
                             withAnimation(.smooth(duration: 0.3)) { speaker.choose(s) }
                         } label: {
                             HStack(spacing: 6) {
-                                Image(systemName: symbol(s.model?.formFactor))
+                                Image(systemName: SpeakerLabel.symbol(s.model?.formFactor))
                                     .font(.system(size: 11, weight: .semibold))
-                                Text(label(s))
+                                Text(SpeakerLabel.name(s))
                                     .font(.caption.weight(active ? .semibold : .medium))
                                     .lineLimit(1)
                                 if active && speaker.status != .connected {
@@ -49,14 +49,18 @@ struct SpeakerSwitcher: View {
             }
     }
 
+}
+
+/// How a nearby speaker is named and drawn in the switcher chips and the main window's sidebar.
+enum SpeakerLabel {
     /// Advertised names are truncated ("FFR JBL Fli"); fall back to the model name when that reads better.
-    private func label(_ s: DiscoveredSpeaker) -> String {
+    static func name(_ s: DiscoveredSpeaker) -> String {
         guard let model = s.model else { return s.name }
         let name = s.name.trimmingCharacters(in: .whitespaces)
         return name.isEmpty || model.name.hasPrefix(name) ? model.shortName : name
     }
 
-    private func symbol(_ form: FormFactor?) -> String {
+    static func symbol(_ form: FormFactor?) -> String {
         switch form {
         case .compact: "speaker.fill"
         case .boombox: "hifispeaker.2.fill"

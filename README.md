@@ -16,14 +16,14 @@
 </p>
 
 <p align="center">
-  <img src="docs/images/screenshot.png" width="360" alt="JBLControl's menu bar panel on a Mac: a JBL Flip 7 with battery level, EQ presets and the Energetic response curve">
+  <img src="docs/images/screenshot.png" width="360" alt="JBLControl's menu bar panel on a Mac: a JBL Flip 7 with battery level, EQ presets and the custom equalizer">
   &nbsp;
   <img src="docs/images/windows-tray.png" width="360" alt="JBLControl's tray panel on Windows: the same Flip 7, presets and custom equalizer">
 </p>
 
 Battery level, EQ presets and a custom equalizer for JBL Flip, Charge, Xtreme, Go, Clip, Pulse, Boombox and
-more. On a Mac it lives in the menu bar (Liquid Glass on Tahoe); on Windows it's an app window plus a system
-tray icon. No phone, no JBL Portable app.
+more. On both platforms it's an app window plus a compact panel from the menu bar (Mac, Liquid Glass on Tahoe)
+or system tray (Windows). No phone, no JBL Portable app.
 
 > Unofficial. Not affiliated with or endorsed by JBL or Harman International.
 
@@ -40,7 +40,7 @@ tray icon. No phone, no JBL Portable app.
 
 | | Mac | Windows |
 |---|---|---|
-| Where it lives | Menu bar panel | App window + system tray icon (click for a compact panel) |
+| Where it lives | App window + menu bar icon (click for a compact panel) | App window + system tray icon (click for a compact panel) |
 | Requirements | macOS 14 Sonoma or later, Apple Silicon or Intel | Windows 10 (1809) or later, x64 or Arm64, with Bluetooth |
 | Download | `JBLControl-<version>.dmg` | `JBLControl-win-x64-<version>-setup.exe` (or `win-arm64`) |
 | Status | Stable | **Preview**: verified with a Flip 7 on Windows 11 |
@@ -58,7 +58,7 @@ protocol code and model list. Verification so far was done on a Mac, except the 
 on Windows.
 
 Beta and experimental models read battery and EQ safely. Changing their EQ needs **Allow experimental EQ**
-(Mac: ••• → Settings → Speaker; Windows: Settings) until someone with that speaker confirms it works.
+(Settings, on both) until someone with that speaker confirms it works.
 
 **Have a beta or experimental model?** Choose **Copy Diagnostics** (Mac: the ••• menu; Windows: right-click
 the tray icon) and paste it into a [device report](../../issues/new?template=device-report.yml). It only sends
@@ -79,14 +79,28 @@ read-only requests, and it hides your speaker's MAC address and serial number.
    That's expected; see [below](#if-macos-blocks-jblcontrol) for why and how to allow it.
    Then click **Allow** when it asks for **Bluetooth**.
 
-A speaker icon appears in the menu bar. Turn your JBL speaker on and click the icon; JBLControl finds it by itself.
+The JBLControl window opens and a speaker icon appears in the menu bar. Turn your JBL speaker on; JBLControl
+finds it by itself.
+
+### Using it
+
+<img src="docs/images/mac-app.png" width="640" alt="JBLControl's window on a Mac: the speaker in the sidebar, presets, the custom 7-band equalizer and the speaker's details">
+
+- The **window** lists each nearby speaker in the sidebar; click one to switch to it. The connected speaker is
+  shown in full: presets, the custom equalizer, battery, firmware and Keep Awake. **Settings** and **About**
+  are at the bottom of the sidebar.
+- **Closing the window keeps JBLControl running in the menu bar.** It then has no Dock icon until you open
+  the window again. **Click** the menu bar icon for a compact panel with presets and the equalizer; its
+  **Open JBLControl** button and ••• menu bring the window back, as does opening JBLControl from
+  Applications or Spotlight.
+- Launched at login, it starts quietly in the menu bar.
 
 > Close the JBL Portable app on your phone if JBLControl can't connect: speakers accept one control
 > connection at a time.
 
-**Start at login:** ••• → **Settings…** → General → **Launch at login**.
+**Start at login:** **Settings** → General → **Launch at login**.
 
-**Update:** quit JBLControl (••• → **Quit**), then install the new DMG the same way and choose **Replace**.
+**Update:** quit JBLControl (⌘Q, or ••• → **Quit**), then install the new DMG the same way and choose **Replace**.
 
 **Uninstall:** quit it and drag JBLControl from Applications to the Trash. Optionally also delete
 `~/Library/Caches/io.github.jblcontrol` (cached speaker photos).
@@ -257,7 +271,7 @@ JBLControl speaks the same protocol as JBL's own app. There are two generations,
 | Path | What |
 |---|---|
 | `Sources/JBLControlKit` | Protocol library: frame codecs, EQ codecs per family, model catalog. No UI, fully tested |
-| `Sources/JBLControl` | The Mac app: CoreBluetooth, SwiftUI menu bar panel, diagnostics |
+| `Sources/JBLControl` | The Mac app: CoreBluetooth, SwiftUI window and menu bar panel, diagnostics |
 | `windows/JBLControlKit.Windows` | The protocol library ported to C#, checked against the same test fixtures |
 | `windows/JBLControl.Windows` | The Windows app: WinUI 3 window and tray, Windows Bluetooth LE |
 | `windows/Installer` | The Windows installer (Inno Setup) and its artwork |

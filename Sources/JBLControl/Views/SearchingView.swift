@@ -6,6 +6,8 @@ import SwiftUI
 /// JBL speakers nearby to pick. No details from a previous speaker — a different one may connect.
 struct SearchingView: View {
     @Environment(SpeakerManager.self) private var speaker
+    /// Chips for the speakers nearby; the main window lists them in its sidebar instead.
+    var showsNearby = true
 
     var body: some View {
         VStack(spacing: 12) {
@@ -32,7 +34,7 @@ struct SearchingView: View {
                     .controlSize(.small)
             }
 
-            if isLooking, !speaker.switchable.isEmpty {
+            if showsNearby, isLooking, !speaker.switchable.isEmpty {
                 VStack(spacing: 6) {
                     Text("Nearby")
                         .font(.caption2.weight(.semibold))

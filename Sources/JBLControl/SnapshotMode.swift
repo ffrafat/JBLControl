@@ -2,10 +2,12 @@ import AppKit
 import JBLControlKit
 import SwiftUI
 
-/// Development aid: `JBLControl --snapshot out.png [--select <category hex>] [--appearance dark|light]`
-/// connects, optionally selects a preset, renders the panel to a PNG and quits.
+/// Development aid: `JBLControl --snapshot out.png [--select <category hex>] [--appearance dark|light] [--window [settings|about]]`
+/// connects, optionally selects a preset, renders the panel (or with `--window`, the main window) to a PNG and quits.
 @MainActor
 enum SnapshotMode {
+    static var isRequested: Bool { CommandLine.arguments.contains("--snapshot") }
+
     static func runIfRequested(_ speaker: SpeakerManager, keepAwake: KeepAwake) {
         let args = CommandLine.arguments
         guard let path = value(after: "--snapshot", in: args) else { return }
@@ -18,7 +20,10 @@ enum SnapshotMode {
                 speaker.select(preset)
                 try? await Task.sleep(for: .seconds(1.5))
             }
-            let host = NSHostingView(rootView: PanelView().environment(speaker).environment(keepAwake))
+            let host: NSView = args.contains("--window")
+                ? NSHostingView(rootView: MainWindowView().environment(speaker).environment(keepAwake)
+                    .environment(navigation(value(after: "--window", in: args))).frame(width: 1000, height: 720))
+                : NSHostingView(rootView: PanelView().environment(speaker).environment(keepAwake))
             if let wait = value(after: "--wait", in: args).flatMap(Double.init) {
                 speaker.panelOpened()
                 try? await Task.sleep(for: .seconds(wait))
@@ -53,6 +58,13 @@ enum SnapshotMode {
             }
             exit(0)
         }
+    }
+
+    /// `--window settings` / `--window about` open the main window on that page.
+    private static func navigation(_ page: String?) -> MainNavigation {
+        let navigation = MainNavigation()
+        navigation.page = page == "settings" ? .settings : page == "about" ? .about : .speakers
+        return navigation
     }
 
     private static func value(after flag: String, in args: [String]) -> String? {

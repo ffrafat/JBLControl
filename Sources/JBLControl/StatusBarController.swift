@@ -11,12 +11,16 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
     private let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     private let popover = NSPopover()
 
-    init(speaker: SpeakerManager, keepAwake: KeepAwake) {
+    init(speaker: SpeakerManager, keepAwake: KeepAwake, mainWindow: MainWindowController) {
         self.speaker = speaker
         self.keepAwake = keepAwake
         super.init()
 
-        let host = NSHostingController(rootView: PanelView().environment(speaker).environment(keepAwake))
+        let panel = PanelView { [weak self] page in
+            self?.popover.performClose(nil)
+            mainWindow.show(page)
+        }
+        let host = NSHostingController(rootView: panel.environment(speaker).environment(keepAwake))
         // The popover follows the panel's size as the equalizer appears and disappears.
         host.sizingOptions = [.preferredContentSize]
         popover.contentViewController = host
@@ -42,7 +46,7 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
         }
     }
 
-    /// Opens the panel under the menu bar icon (also used when the app is opened again while running).
+    /// Opens the panel under the menu bar icon.
     func showPanel() {
         guard let button = item.button, !popover.isShown else { return }
         NSApp.activate()

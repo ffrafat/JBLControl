@@ -4,11 +4,12 @@ import SwiftUI
 
 struct HeaderView: View {
     @Environment(SpeakerManager.self) private var speaker
+    var artworkSize: CGFloat = 104
 
     var body: some View {
         HStack(spacing: 14) {
             SpeakerArtwork(model: speaker.model, colorCode: speaker.colorCode)
-                .frame(width: 104, height: 104)
+                .frame(width: artworkSize, height: artworkSize)
                 .opacity(speaker.status == .connected ? 1 : 0.55)
 
             VStack(alignment: .leading, spacing: 6) {

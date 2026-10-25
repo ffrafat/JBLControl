@@ -73,6 +73,7 @@ final class SpeakerManager: NSObject {
     @ObservationIgnored private var pollTask: Task<Void, Never>?
     @ObservationIgnored private var connectWatchdog: Task<Void, Never>?
     @ObservationIgnored private var browsing = false
+    @ObservationIgnored private var openPanels = 0
     @ObservationIgnored private var lowBatteryNotified = false
     @ObservationIgnored private var ignoredAliases: Set<UUID> = []
     @ObservationIgnored private var lastSeen: [UUID: Date] = [:]
@@ -110,18 +111,22 @@ final class SpeakerManager: NSObject {
 
     // MARK: Actions
 
-    /// While the panel is open, keep scanning so speakers turned on later show up to switch to.
+    /// While a panel is open (the menu bar popover or the main window), keep scanning so speakers
+    /// turned on later show up to switch to. Each open is matched by a `panelClosed()`.
     func panelOpened() {
+        let first = openPanels == 0
+        openPanels += 1
         browsing = true
         // Drop speakers that may have gone away; anything still on air re-appears within a second.
-        discovered.removeAll { $0.id != activeID }
+        if first { discovered.removeAll { $0.id != activeID } }
         if central.state == .poweredOn { scan() }
         refresh()
     }
 
     func panelClosed() {
-        browsing = false
-        if status == .connected { central.stopScan() }
+        openPanels = max(0, openPanels - 1)
+        browsing = openPanels > 0
+        if !browsing, status == .connected { central.stopScan() }
     }
 
     func refresh() {
