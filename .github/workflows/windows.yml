@@ -1,4 +1,4 @@
-# Builds and tests the Windows port (windows/), and packages its release zips on version tags.
+# Builds and tests the Windows port (windows/), and packages its installers and zips on version tags.
 name: Windows
 
 on:
@@ -9,11 +9,15 @@ on:
       - 'windows/**'
       - 'scripts/build-windows.ps1'
       - 'Resources/Info.plist'
+      - 'LICENSE'
+      - 'THIRD_PARTY_NOTICES.md'
       - '.github/workflows/windows.yml'
   pull_request:
     paths:
       - 'windows/**'
       - 'scripts/build-windows.ps1'
+      - 'LICENSE'
+      - 'THIRD_PARTY_NOTICES.md'
       - 'Resources/Info.plist'
       - '.github/workflows/windows.yml'
   workflow_dispatch:
@@ -44,13 +48,19 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
-      - name: Build x64 and arm64 zips
+      # Inno Setup builds the installers; most runner images include it, so only install it when missing.
+      - name: Ensure Inno Setup 6
         shell: pwsh
-        run: ./scripts/build-windows.ps1 -Zip
+        run: |
+          if (-not (Test-Path "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe")) { choco install innosetup --no-progress -y }
+      - name: Build x64 and arm64 installers and zips
+        shell: pwsh
+        run: ./scripts/build-windows.ps1 -Installer -Zip
       - uses: actions/upload-artifact@v4
         with:
           name: JBLControl-windows
           path: |
+            build/JBLControl-win-*-setup.exe
             build/JBLControl-win-*.zip
             build/JBLControl-win-*.sha256
           if-no-files-found: error

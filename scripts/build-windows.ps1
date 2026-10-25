@@ -7,13 +7,17 @@
     else needs installing) for each architecture: .NET has no fat binary, so x64 and arm64 are separate
     builds, as plan section 10 describes. Unsigned, like the Mac release zips.
 
-    Usage: scripts/build-windows.ps1 [-Arch x64,arm64] [-Zip] [-Install] [-Run]
-      -Zip      build/JBLControl-win-<arch>-<version>.zip per architecture, with SHA-256 hashes
-      -Install  copy this PC's architecture to %LOCALAPPDATA%\Programs\JBLControl, with a Start menu shortcut
-      -Run      restart the app (the installed copy with -Install, otherwise the fresh build)
+    Usage: scripts/build-windows.ps1 [-Arch x64,arm64] [-Installer] [-Zip] [-Install] [-Run]
+      -Installer  build/JBLControl-win-<arch>-<version>-setup.exe per architecture (needs Inno Setup 6:
+                  winget install JRSoftware.InnoSetup); the release download
+      -Zip        build/JBLControl-win-<arch>-<version>.zip per architecture (portable, no installer)
+      -Install    copy this PC's architecture to %LOCALAPPDATA%\Programs\JBLControl, with a Start menu shortcut
+      -Run        restart the app (the installed copy with -Install, otherwise the fresh build)
+    -Installer and -Zip also write build/JBLControl-win-<version>.sha256 with every file's SHA-256.
 #>
 param(
     [ValidateSet('x64', 'arm64')] [string[]] $Arch = @('x64', 'arm64'),
+    [switch] $Installer,
     [switch] $Zip,
     [switch] $Install,
     [switch] $Run
@@ -24,6 +28,18 @@ Set-Location $root
 
 $plist = Get-Content -Raw 'Resources/Info.plist'
 $version = [regex]::Match($plist, 'CFBundleShortVersionString</key>\s*<string>([^<]+)').Groups[1].Value
+$build = [regex]::Match($plist, 'CFBundleVersion</key>\s*<string>([^<]+)').Groups[1].Value
+
+# Inno Setup's compiler: on PATH, or where its installer (or winget) puts it.
+$iscc = $null
+if ($Installer) {
+    $iscc = (Get-Command ISCC.exe -ErrorAction SilentlyContinue).Source
+    if (-not $iscc) {
+        $iscc = @("$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe", "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe",
+            "$env:ProgramFiles\Inno Setup 6\ISCC.exe") | Where-Object { Test-Path $_ } | Select-Object -First 1
+    }
+    if (-not $iscc) { throw 'Inno Setup 6 not found. Install it with: winget install JRSoftware.InnoSetup' }
+}
 $project = 'windows/JBLControl.Windows/JBLControl.Windows.csproj'
 $out = Join-Path $root 'build/windows'
 
@@ -38,24 +54,43 @@ foreach ($a in $Arch) {
     if (Test-Path $dir) { Remove-Item -Recurse -Force $dir }
     dotnet publish $project -c Release -r "win-$a" --self-contained true -p:Platform=$a -p:PublishReadyToRun=true -o $dir -nologo
     if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed for $a" }
+    # The redistributed runtimes' terms must ship with them (see THIRD_PARTY_NOTICES.md).
+    $licenses = 'JBLControl-LICENSE.txt', 'THIRD_PARTY_NOTICES.md', 'WindowsAppSDK-LICENSE.txt', 'CommunityToolkit-LICENSE.md',
+        'dotnet-LICENSE.txt', 'dotnet-ThirdPartyNotices.txt'
+    $missing = $licenses | Where-Object { -not (Test-Path (Join-Path $dir "licenses/$_")) }
+    if ($missing) { throw "License files missing from the $a build: $($missing -join ', ')" }
     Write-Host "Built $dir"
+}
+
+$artifacts = @()
+
+if ($Installer) {
+    foreach ($a in $Arch) {
+        $setup = Join-Path $root "build/JBLControl-win-$a-$version-setup.exe"
+        & $iscc /Qp "/DAppVersion=$version" "/DBuildNumber=$build" "/DArch=$a" "/DSourceDir=$(Join-Path $out "$a\JBLControl")" `
+            "/DOutputDir=$(Join-Path $root 'build')" (Join-Path $root 'windows/Installer/JBLControl.iss')
+        if ($LASTEXITCODE -ne 0) { throw "Inno Setup failed for $a" }
+        $artifacts += $setup
+        Write-Host "Built $setup"
+    }
 }
 
 if ($Zip) {
     Add-Type -AssemblyName System.IO.Compression.FileSystem
-    $sums = @()
     foreach ($a in $Arch) {
         $zipPath = Join-Path $root "build/JBLControl-win-$a-$version.zip"
         if (Test-Path $zipPath) { Remove-Item -Force $zipPath }
         [IO.Compression.ZipFile]::CreateFromDirectory((Join-Path $out "$a/JBLControl"), $zipPath,
             [IO.Compression.CompressionLevel]::Optimal, $true)
-        $hash = (Get-FileHash -Algorithm SHA256 $zipPath).Hash.ToLowerInvariant()
-        $sums += "$hash  $(Split-Path -Leaf $zipPath)"
+        $artifacts += $zipPath
         Write-Host "Zipped $zipPath"
     }
+}
+
+if ($artifacts) {
     # The same format as shasum -a 256, for the release notes.
-    $sumsPath = Join-Path $root "build/JBLControl-win-$version.sha256"
-    Set-Content -Path $sumsPath -Value $sums -Encoding ascii
+    $sums = $artifacts | ForEach-Object { "$((Get-FileHash -Algorithm SHA256 $_).Hash.ToLowerInvariant())  $(Split-Path -Leaf $_)" }
+    Set-Content -Path (Join-Path $root "build/JBLControl-win-$version.sha256") -Value $sums -Encoding ascii
     $sums | ForEach-Object { Write-Host $_ }
 }
 

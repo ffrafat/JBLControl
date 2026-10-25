@@ -46,6 +46,24 @@
     <Content Include="Assets\AppIcon.png" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <!--
+    License texts for everything a self-contained build redistributes, shipped in licenses\ next to the exe
+    (the installer's license page points there): this app's, the Windows App SDK's terms, the .NET runtime's
+    and the toolkit's.
+  -->
+  <ItemGroup>
+    <None Include="..\..\LICENSE" Link="licenses\JBLControl-LICENSE.txt" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\THIRD_PARTY_NOTICES.md" Link="licenses\THIRD_PARTY_NOTICES.md" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(NuGetPackageRoot)microsoft.windowsappsdk.winui\2.3.9\license.txt" Link="licenses\WindowsAppSDK-LICENSE.txt"
+          CopyToOutputDirectory="PreserveNewest" Condition="Exists('$(NuGetPackageRoot)microsoft.windowsappsdk.winui\2.3.9\license.txt')" />
+    <None Include="$(NuGetPackageRoot)communitytoolkit.mvvm\8.4.0\License.md" Link="licenses\CommunityToolkit-LICENSE.md"
+          CopyToOutputDirectory="PreserveNewest" Condition="Exists('$(NuGetPackageRoot)communitytoolkit.mvvm\8.4.0\License.md')" />
+    <None Include="$(NetCoreRoot)LICENSE.txt" Link="licenses\dotnet-LICENSE.txt"
+          CopyToOutputDirectory="PreserveNewest" Condition="Exists('$(NetCoreRoot)LICENSE.txt')" />
+    <None Include="$(NetCoreRoot)ThirdPartyNotices.txt" Link="licenses\dotnet-ThirdPartyNotices.txt"
+          CopyToOutputDirectory="PreserveNewest" Condition="Exists('$(NetCoreRoot)ThirdPartyNotices.txt')" />
+  </ItemGroup>
+
   <ItemGroup>
     <!--
       The Windows App SDK's parts this app uses (the versions in the 2.5.1 bundle), rather than the

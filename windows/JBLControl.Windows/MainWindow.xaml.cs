@@ -43,7 +43,7 @@ public sealed partial class MainWindow : Window
         this.speaker = speaker;
         this.keepAwake = keepAwake;
         InitializeComponent();
-        SystemBackdrop = new MicaBackdrop();
+        Backdrops.Apply(this, Root, acrylic: false);
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(AppTitleBar);
         AppWindow.Title = AppInfo.Name;
@@ -56,6 +56,12 @@ public sealed partial class MainWindow : Window
         int height = Math.Min((int)(720 * scale), area.Height - 40);
         AppWindow.Resize(new SizeInt32(width, height));
         AppWindow.Move(new PointInt32(area.X + (area.Width - width) / 2, area.Y + (area.Height - height) / 2));
+        if (AppWindow.Presenter is OverlappedPresenter presenter)
+        {
+            // Below this the sidebar and the speaker detail no longer fit side by side.
+            presenter.PreferredMinimumWidth = (int)(760 * scale);
+            presenter.PreferredMinimumHeight = (int)(520 * scale);
+        }
 
         Detail.ShowsSpeakerChips = false; // the list beside it does that job
         Detail.ArtworkSize = 150;
@@ -249,6 +255,8 @@ public sealed partial class MainWindow : Window
             text.Children.Add(caption);
             var item = speakerItems[s.Address];
             item.Content = text;
+            // The content is a panel, so screen readers would otherwise announce "NavigationViewItem".
+            Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(item, $"{name}, {detail}");
             ((FontIcon)item.Icon).Foreground = isActive
                 ? (Brush)Application.Current.Resources["JblAccentBrush"]
                 : (Brush)Application.Current.Resources["TextFillColorSecondaryBrush"];

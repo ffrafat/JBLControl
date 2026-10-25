@@ -4,12 +4,12 @@
 
 <h1 align="center">JBLControl</h1>
 
-<p align="center"><b>JBL speaker control, right in your menu bar.</b></p>
+<p align="center"><b>JBL speaker control on your Mac and Windows PC.</b></p>
 
 <p align="center">
   <a href="../../releases/latest"><img src="https://img.shields.io/github/v/release/ffrafat/JBLControl?label=download" alt="Latest release"></a>
   <img src="https://img.shields.io/badge/macOS-14%2B-blue" alt="macOS 14+">
-  <img src="https://img.shields.io/badge/Apple%20Silicon%20%26%20Intel-universal-lightgrey" alt="Apple Silicon and Intel">
+  <img src="https://img.shields.io/badge/Windows-10%20%26%2011-0078D4" alt="Windows 10 and 11">
   <a href="LICENSE"><img src="https://img.shields.io/github/license/ffrafat/JBLControl" alt="MIT license"></a>
 </p>
 
@@ -18,9 +18,8 @@
 </p>
 
 Battery level, EQ presets and a custom equalizer for JBL Flip, Charge, Xtreme, Go, Clip, Pulse, Boombox and
-more, in a native macOS menu bar panel (Liquid Glass on Tahoe). No phone, no JBL Portable app.
-
-**New: a [Windows version](#windows-preview) is in preview,** with the same features in a window and the system tray.
+more. On a Mac it lives in the menu bar (Liquid Glass on Tahoe); on Windows it's an app window plus a system
+tray icon. No phone, no JBL Portable app.
 
 > Unofficial. Not affiliated with or endorsed by JBL or Harman International.
 
@@ -31,9 +30,16 @@ more, in a native macOS menu bar panel (Liquid Glass on Tahoe). No phone, no JBL
 - 🔄 Auto-reconnects, even though JBL speakers rotate their Bluetooth address
 - 🖼️ The speaker shown in its actual color
 - 🔀 One-click switching when several JBL speakers are nearby
-- ☕ Keep Awake: stops the speaker's auto power-off while your Mac is playing to it (JBL has no setting for this)
-- ⚙️ Settings: launch at login, battery percentage in the menu bar, low-battery alerts, update checks
+- ☕ Keep Awake: stops the speaker's auto power-off while your computer is playing to it (JBL has no setting for this)
+- ⚙️ Settings: launch at login, low-battery alerts, update checks
 - 🧪 Built-in diagnostics report, so owners of untested models can help add support
+
+| | Mac | Windows |
+|---|---|---|
+| Where it lives | Menu bar panel | App window + system tray icon (click for a compact panel) |
+| Requirements | macOS 14 Sonoma or later, Apple Silicon or Intel | Windows 10 (1809) or later, x64 or Arm64, with Bluetooth |
+| Download | `JBLControl-<version>.dmg` | `JBLControl-win-x64-<version>-setup.exe` (or `win-arm64`) |
+| Status | Stable | **Preview**: verified with a Flip 7 on Windows 11 |
 
 ## Supported speakers
 
@@ -43,15 +49,18 @@ more, in a native macOS menu bar panel (Liquid Glass on Tahoe). No phone, no JBL
 | 🟠 Beta | Xtreme 3, Xtreme 4, Go 4, Go 4 Duo, Clip 5, Tuner 3 |
 | 🟣 Experimental | Go 5, Grip, Xtreme 5, Boombox 2/3/4, Flip 6, Pulse 5, Flip/Charge Essential 3 SE, older models |
 
-Full list with product IDs: [docs/SUPPORTED_MODELS.md](docs/SUPPORTED_MODELS.md).
-Beta and experimental models read battery and EQ safely. Changing their EQ needs
-**••• → Allow Experimental EQ** until someone with that speaker confirms it works.
+Full list with product IDs: [docs/SUPPORTED_MODELS.md](docs/SUPPORTED_MODELS.md). Both apps share the same
+protocol code and model list. Verification so far was done on a Mac, except the Flip 7, which is also verified
+on Windows.
 
-**Have a beta or experimental model?** Choose **••• → Copy Diagnostics** and paste it into a
-[device report](../../issues/new?template=device-report.yml). It only sends read-only requests,
-and it hides your speaker's MAC address and serial number.
+Beta and experimental models read battery and EQ safely. Changing their EQ needs **Allow experimental EQ**
+(Mac: ••• → Settings → Speaker; Windows: Settings) until someone with that speaker confirms it works.
 
-## Installation
+**Have a beta or experimental model?** Choose **Copy Diagnostics** (Mac: the ••• menu; Windows: right-click
+the tray icon) and paste it into a [device report](../../issues/new?template=device-report.yml). It only sends
+read-only requests, and it hides your speaker's MAC address and serial number.
+
+## Install on Mac
 
 **Requirements:** macOS 14 Sonoma or later, on Apple Silicon or Intel. On macOS 26 Tahoe and later the panel uses Liquid Glass; on Sonoma and Sequoia it uses the classic translucent look.
 
@@ -135,13 +144,79 @@ applies it to everything inside the app). It changes nothing else on your Mac an
 Don't use commands such as `sudo spctl --master-disable` that you may see suggested online: they turn off
 Gatekeeper for every app.
 
-### Build from source
+## Install on Windows
 
-Needs Xcode 26 or later (the app itself runs on macOS 14+). Builds are universal (Apple Silicon + Intel).
+> **Preview.** Everything the Mac app does, verified with a JBL Flip 7 on Windows 11. Other models use the
+> same protocol code but haven't been tried from Windows yet; a
+> [device report](../../issues/new?template=device-report.yml) helps either way.
+
+**Requirements:** Windows 10 version 1809 or later (tested on Windows 11), x64 or Arm64, with Bluetooth.
+Nothing else to install: the download includes everything it needs.
+
+### Install in 3 steps
+
+1. **Download** `JBLControl-win-x64-<version>-setup.exe` from the [latest release](../../releases/latest)
+   (`win-arm64` for Arm PCs, such as Snapdragon laptops).
+2. **Run it.** Windows will probably warn you first; see [below](#if-windows-blocks-jblcontrol).
+   The installer doesn't need administrator rights. You can choose to start JBLControl when you sign in
+   and to add a desktop shortcut.
+3. **Finish**, and JBLControl opens. Turn your JBL speaker on nearby; it finds it by itself.
+
+> Close the JBL Portable app on your phone if JBLControl can't connect: speakers accept one control
+> connection at a time.
+
+### Using it
+
+- The **window** lists each nearby speaker on the left; click one to switch to it. The connected speaker is
+  shown in full: presets, the custom equalizer, battery, firmware and Keep Awake. **Settings** and **About**
+  are at the bottom.
+- **Closing the window keeps JBLControl running in the system tray** (the icons by the clock).
+  **Click** the tray icon for a compact panel with presets and the equalizer, **right-click** it for
+  Keep Speaker Awake, Settings, Copy Diagnostics, About and **Quit**, or **double-click** it to bring the
+  window back.
+- If the tray icon isn't visible, Windows put it in the hidden icons (**^**): drag it onto the taskbar, or turn
+  it on in **Settings → Personalization → Taskbar → Other system tray icons**.
+- **Keep Awake** works as on the Mac, while this PC is the speaker's sound output (choose it in
+  **Settings → System → Sound**).
+
+**Start at login:** Settings → **Launch at login** (or the option in the installer). It then starts quietly in
+the tray.
+
+**Update:** run the new installer. It closes JBLControl, updates it and keeps your settings.
+
+**Uninstall:** **Settings → Apps → Installed apps → JBLControl → Uninstall**. Your settings stay in
+`%LOCALAPPDATA%\JBLControl` in case you reinstall; delete that folder to remove them too.
+
+**Prefer no installer?** Each release also has a portable `JBLControl-win-x64-<version>.zip`: extract it
+anywhere and run `JBLControl.exe`.
+
+### If Windows blocks JBLControl
+
+Like the Mac app, the Windows build isn't signed with a paid code-signing certificate [yet](#support-the-project),
+so Windows warns before running it. The same checks as for the Mac app apply: all the code is in this
+repository, each release is built from it with `scripts/build-windows.ps1`, and each release lists SHA-256
+checksums. In PowerShell, `Get-FileHash ~\Downloads\JBLControl-win-x64-<version>-setup.exe` should print
+the same value.
+
+- **"Windows protected your PC"** (SmartScreen): click **More info**, then **Run anyway**. You only need to
+  do this once for each download.
+- **"Smart App Control blocked an app"**: Smart App Control only runs signed apps and has no per-app
+  exception, so JBLControl can't run while it's on. It's in **Windows Security → App & browser control →
+  Smart App Control**. Turning it off is your decision: on many PCs it can't be turned back on without
+  resetting Windows, while Microsoft Defender keeps protecting you either way.
+
+## Build from source
 
 ```bash
 git clone https://github.com/ffrafat/JBLControl.git
 cd JBLControl
+```
+
+### Mac
+
+Needs Xcode 26 or later (the app itself runs on macOS 14+). Builds are universal (Apple Silicon + Intel).
+
+```bash
 scripts/build-app.sh --install --run   # builds, copies to /Applications, launches
 swift test                             # protocol tests, including real Flip 7 captures
 ```
@@ -150,77 +225,20 @@ Open `Package.swift` in Xcode to work on it. The build script signs with your Ap
 you have one, so the Bluetooth permission survives rebuilds. `scripts/build-app.sh --zip` also writes a
 release zip to `build/`.
 
-## Windows (preview)
-
-The same features as the Mac app, in a Windows 11-style window and the system tray: battery, presets, the
-custom equalizer, speaker switching, Keep Awake, low-battery alerts, launch at login, update checks and the
-diagnostics report.
-
-> **Preview.** Verified with a JBL Flip 7 on Windows 11. It should work with every model the Mac app
-> supports, but nobody has tried the others from Windows yet. Please send a
-> [device report](../../issues/new?template=device-report.yml) either way.
-
-**Requirements:** Windows 10 version 1809 or later (tested on Windows 11), with Bluetooth. Nothing else to
-install: the download includes everything it needs.
-
-### Install
-
-1. **Download** `JBLControl-win-x64-<version>.zip` from the [latest release](../../releases/latest)
-   (`win-arm64` for Arm PCs such as Snapdragon laptops).
-2. **Extract** it somewhere permanent, for example `%LOCALAPPDATA%\Programs\`. You get a `JBLControl` folder.
-3. **Open `JBLControl.exe`.** Windows will probably warn you first; see [below](#if-windows-blocks-jblcontrol).
-
-The JBLControl window opens and finds your speaker by itself. Each nearby speaker is listed on the left;
-click one to switch to it. **Closing the window keeps JBLControl running in the system tray** (the icons
-by the clock):
-
-- **Click** the tray icon for a compact panel with presets and the equalizer.
-- **Right-click** it for Keep Speaker Awake, Settings, Copy Diagnostics, About and **Quit**.
-- **Double-click** it, or open JBLControl again, to bring the window back.
-
-If the icon isn't visible, Windows put it in the hidden icons (**^**): drag it onto the taskbar, or turn it on
-in **Settings → Personalization → Taskbar → Other system tray icons**.
-
-**Start at login:** Settings → **Launch at login**. It then starts quietly in the tray.
-
-**Update:** quit JBLControl (right-click the tray icon → **Quit**), then replace the `JBLControl` folder with
-the new one.
-
-**Uninstall:** turn off **Launch at login**, quit JBLControl and delete its folder. Settings and cached
-speaker photos are in `%LOCALAPPDATA%\JBLControl`.
-
-Keep Awake works as on the Mac, while this PC is the speaker's sound output (choose it in
-**Settings → System → Sound**).
-
-### If Windows blocks JBLControl
-
-Like the Mac app, the Windows build isn't signed with a paid certificate yet, so Windows warns about it.
-
-- **"Windows protected your PC"** (SmartScreen): click **More info**, then **Run anyway**. Windows
-  remembers your choice for this copy.
-- **"Smart App Control blocked an app"**: Smart App Control only runs signed apps and has no per-app
-  exception, so JBLControl can't run while it's on. It's in **Windows Security → App & browser control →
-  Smart App Control**. Turning it off is your decision: on many PCs it can't be turned back on without
-  resetting Windows, while Microsoft Defender keeps protecting you either way.
-
-The same checks as for the Mac app apply: all the code is in this repository, each release is built from it
-with `scripts/build-windows.ps1`, and each release lists SHA-256 checksums. In PowerShell,
-`Get-FileHash ~\Downloads\JBLControl-win-x64-<version>.zip` should print the same value.
-
-### Build from source on Windows
+### Windows
 
 Needs the [.NET 10 SDK](https://dotnet.microsoft.com/download) (`winget install Microsoft.DotNet.SDK.10`);
-no Visual Studio required.
+no Visual Studio required. Building the installer also needs Inno Setup 6 (`winget install JRSoftware.InnoSetup`).
 
 ```powershell
-git clone https://github.com/ffrafat/JBLControl.git
-cd JBLControl
-dotnet test windows/JBLControl.Windows.slnx            # protocol tests (the same fixtures as the Swift tests)
+dotnet test windows/JBLControl.Windows.slnx                                        # protocol tests (the same fixtures as the Swift tests)
 powershell -ExecutionPolicy Bypass -File scripts/build-windows.ps1 -Install -Run   # build, install, launch
+powershell -ExecutionPolicy Bypass -File scripts/build-windows.ps1 -Installer -Zip # release installers and zips
 ```
 
-`-Install` copies it to `%LOCALAPPDATA%\Programs\JBLControl` with a Start menu entry. `-Zip` writes the x64
-and arm64 release zips and their SHA-256 checksums to `build/`. The plan and status of the port are in [windows/PORT_PLAN.md](windows/PORT_PLAN.md).
+`-Install` copies it to `%LOCALAPPDATA%\Programs\JBLControl` with a Start menu entry. `-Installer` and `-Zip`
+write the x64 and arm64 setup programs and portable zips, with their SHA-256 checksums, to `build/`. The
+plan and status of the port are in [windows/PORT_PLAN.md](windows/PORT_PLAN.md).
 
 ## How it works
 
@@ -231,13 +249,13 @@ JBLControl speaks the same protocol as JBL's own app. There are two generations,
 | Path | What |
 |---|---|
 | `Sources/JBLControlKit` | Protocol library: frame codecs, EQ codecs per family, model catalog. No UI, fully tested |
-| `Sources/JBLControl` | The menu bar app: CoreBluetooth, SwiftUI panel, diagnostics |
+| `Sources/JBLControl` | The Mac app: CoreBluetooth, SwiftUI menu bar panel, diagnostics |
 | `windows/JBLControlKit.Windows` | The protocol library ported to C#, checked against the same test fixtures |
 | `windows/JBLControl.Windows` | The Windows app: WinUI 3 window and tray, Windows Bluetooth LE |
-| `scripts/build-windows.ps1` | Builds, installs and zips the Windows app |
-| `scripts/make-windows-icons.ps1` | Renders the Windows app and tray icons from the Mac icon |
-| `scripts/generate-catalog.py` | Regenerates the model catalog from the JBL app's model data |
+| `windows/Installer` | The Windows installer (Inno Setup) and its artwork |
+| `scripts/generate-catalog.py` | Regenerates the model catalog (Swift and C#) from the JBL app's model data |
 | `scripts/make-icon.py` | Regenerates the Liquid Glass app icon (`Resources/AppIcon.icon`, opens in Icon Composer) |
+| `scripts/make-windows-icons.ps1` | Renders the Windows app icon, tray icon and installer artwork from the Mac icon |
 | `Tools/Probe` | Standalone read-only BLE probe for reverse-engineering new models |
 
 ## Contributing
@@ -245,18 +263,18 @@ JBLControl speaks the same protocol as JBL's own app. There are two generations,
 Contributions of every size help:
 
 - **Own a beta or experimental speaker?** Send a [device report](../../issues/new?template=device-report.yml)
-  with the output of **••• → Copy Diagnostics**. This is the most useful thing you can do: it's how models
-  get verified.
-- **Code:** protocol work, new models, UI. See [CONTRIBUTING.md](CONTRIBUTING.md).
+  with the output of **Copy Diagnostics**. This is the most useful thing you can do: it's how models
+  get verified. Reports from Windows are just as welcome.
+- **Code:** protocol work, new models, UI on either platform. See [CONTRIBUTING.md](CONTRIBUTING.md).
 - **Speaker photos:** add jbl.com image paths for your model (see [CONTRIBUTING.md](CONTRIBUTING.md#add-a-speaker-photo)).
 - **Bugs and ideas:** [open an issue](../../issues).
 
 ## Support the project
 
-JBLControl is free and open source. Right now every download triggers macOS's *"cannot verify"* warning,
-because shipping a properly signed and **notarized** Mac app needs an Apple Developer Program membership
-(**US$99 a year**). Donations go first to that fee, then to buying the speakers people are waiting on so
-they can be tested on real hardware.
+JBLControl is free and open source. Right now every download triggers a warning on both platforms: shipping
+a properly signed and **notarized** Mac app needs an Apple Developer Program membership (**US$99 a year**),
+and a Windows code-signing certificate costs about as much again. Donations go first to those fees, then to
+buying the speakers people are waiting on so they can be tested on real hardware.
 
 - ❤️ [GitHub Sponsors](https://github.com/sponsors/ffrafat)
 

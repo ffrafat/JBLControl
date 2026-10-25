@@ -29,6 +29,23 @@ public static class LoginItem
         }
     }
 
+    /// <summary>When it's on but points at another copy (the app was moved, or reinstalled elsewhere),
+    /// point it at this one, so signing in doesn't start a stale build or nothing at all.</summary>
+    public static void RefreshPath()
+    {
+        try
+        {
+            using var key = Registry.CurrentUser.OpenSubKey(RunKey, writable: true);
+            if (key?.GetValue(AppInfo.Name) is not string current || Environment.ProcessPath is not { } exe) return;
+            string wanted = $"\"{exe}\" {BackgroundArgument}";
+            if (!string.Equals(current, wanted, StringComparison.OrdinalIgnoreCase)) key.SetValue(AppInfo.Name, wanted);
+        }
+        catch (Exception ex)
+        {
+            CrashLog.Write(ex);
+        }
+    }
+
     /// <returns>An error message, or null on success.</returns>
     public static string? Set(bool enabled)
     {

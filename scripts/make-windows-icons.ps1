@@ -6,7 +6,8 @@
     - windows/JBLControl.Windows/Assets/AppIcon.ico: the Mac app icon (graphite boombox with EQ sliders
       on the sunset gradient) as a Windows icon, 16-256 px.
     - windows/JBLControl.Windows/TrayIcons.Generated.cs: the same icon as raw pixels at each
-      notification-area size, which TrayIcon composites the battery bar over at runtime.
+      notification-area size, which TrayIcon draws its Keep Awake dot over at runtime.
+    - windows/Installer/Wizard*.bmp: the installer's branded banner and header images.
 
     Rasterizes the SVGs with headless Microsoft Edge, so it needs nothing beyond Windows itself.
     Re-run after changing the Mac icon (scripts/make-icon.py):  powershell -File scripts/make-windows-icons.ps1
@@ -37,7 +38,7 @@ function Render([string]$html, [int]$w, [int]$h, [string]$png) {
     $shot = "$png.full.png"
     $uri = ([Uri]$page).AbsoluteUri
     $edgeArgs = @('--headless=new', '--disable-gpu', '--hide-scrollbars', '--force-device-scale-factor=1',
-        '--default-background-color=00000000', "`"--user-data-dir=$userData`"", '--window-size=600,600', "`"--screenshot=$shot`"", $uri)
+        '--default-background-color=00000000', "`"--user-data-dir=$userData`"", '--window-size=800,800', "`"--screenshot=$shot`"", $uri)
     $p = Start-Process -FilePath $edge -ArgumentList $edgeArgs -Wait -PassThru -WindowStyle Hidden
     if (-not (Test-Path $shot)) { throw "Edge didn't render $png (exit $($p.ExitCode))" }
     $full = [Drawing.Bitmap]::FromFile($shot)
@@ -133,5 +134,50 @@ $($lines -join "`r`n")
 Remove-Item (Join-Path $appDir 'TrayShapes.Generated.cs') -ErrorAction SilentlyContinue
 Set-Content -Path (Join-Path $appDir 'TrayIcons.Generated.cs') -Value $cs -Encoding UTF8
 Write-Host "wrote $(Join-Path $appDir 'TrayIcons.Generated.cs')"
+
+# --- Installer artwork ------------------------------------------------------------------------------
+# Inno Setup's wizard images (24-bit BMP, which every Inno version reads), at 100/150/200% so they stay sharp:
+# the tall banner on the Welcome and Finished pages, and the small image in the corner of the other pages.
+$installerDir = Join-Path $root 'windows/Installer'
+New-Item -ItemType Directory -Force $installerDir | Out-Null
+
+function Save-Bmp([string]$png, [string]$bmp) {
+    $src = [Drawing.Bitmap]::FromFile($png)
+    $flat = New-Object Drawing.Bitmap $src.Width, $src.Height, ([Drawing.Imaging.PixelFormat]::Format24bppRgb)
+    $g = [Drawing.Graphics]::FromImage($flat)
+    $g.Clear([Drawing.Color]::White) # the wizard pages are white behind the small image
+    $g.DrawImage($src, 0, 0, $src.Width, $src.Height)
+    $g.Dispose(); $src.Dispose()
+    $flat.Save($bmp, [Drawing.Imaging.ImageFormat]::Bmp)
+    $flat.Dispose()
+}
+
+$banner = @"
+<div style="width:{W}px;height:{H}px;position:relative;overflow:hidden;font-family:'Segoe UI Variable Display','Segoe UI',sans-serif;
+  background:linear-gradient(180deg,#FF9429 0%,#E62E33 100%)">
+  <div style="position:absolute;left:-30%;top:-20%;width:160%;height:70%;background:radial-gradient(closest-side,rgba(255,255,255,.28),rgba(255,255,255,0))"></div>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="20 250 984 560" style="position:absolute;left:8%;top:22%;width:84%">
+    <defs><filter id="s" x="-20%" y="-20%" width="140%" height="160%"><feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#000" flood-opacity="0.45"/></filter></defs>
+    <g filter="url(#s)">$body</g><g>$controls</g>
+  </svg>
+  <div style="position:absolute;left:0;right:0;top:58%;text-align:center;color:#fff">
+    <div style="font-size:{T}px;font-weight:700;letter-spacing:.2px;text-shadow:0 2px 8px rgba(0,0,0,.18)">JBLControl</div>
+    <div style="font-size:{S}px;opacity:.9;margin-top:{G}px;padding:0 10%;line-height:1.3">JBL speaker control<br>for Windows</div>
+  </div>
+</div>
+"@
+foreach ($scale in @(@{ n = 100; w = 164; h = 314 }, @{ n = 150; w = 246; h = 471 }, @{ n = 200; w = 328; h = 628 })) {
+    $k = $scale.w / 164
+    $html = $banner -replace '\{W\}', $scale.w -replace '\{H\}', $scale.h -replace '\{T\}', [int](21 * $k) -replace '\{S\}', [int](11 * $k) -replace '\{G\}', [int](4 * $k)
+    $png = Join-Path $work "banner-$($scale.n).png"
+    Render ($page -replace '\{0\}', $html) $scale.w $scale.h $png
+    Save-Bmp $png (Join-Path $installerDir "WizardImage-$($scale.n).bmp")
+}
+foreach ($scale in @(@{ n = 100; s = 55 }, @{ n = 150; s = 83 }, @{ n = 200; s = 110 })) {
+    $png = Join-Path $work "small-$($scale.n).png"
+    Render ($page -replace '\{0\}', ($iconSvg -replace '\{0\}', $scale.s)) $scale.s $scale.s $png
+    Save-Bmp $png (Join-Path $installerDir "WizardSmallImage-$($scale.n).bmp")
+}
+Write-Host "wrote $installerDir\Wizard*.bmp"
 
 Remove-Item -Recurse -Force $work -ErrorAction SilentlyContinue

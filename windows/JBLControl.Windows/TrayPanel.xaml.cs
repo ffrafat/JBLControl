@@ -24,7 +24,7 @@ public sealed partial class TrayPanel : Window
     {
         this.speaker = speaker;
         InitializeComponent();
-        SystemBackdrop = new Microsoft.UI.Xaml.Media.DesktopAcrylicBackdrop();
+        Backdrops.Apply(this, Root, acrylic: true);
         AppWindow.Title = AppInfo.Name;
         AppWindow.SetIcon(AppInfo.IconPath);
         // A flyout, not a window: no taskbar button, Alt+Tab entry, title bar or close button.

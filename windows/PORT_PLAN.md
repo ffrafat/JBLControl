@@ -43,8 +43,17 @@ diagnostics, settings) rather than a cut-down first pass.
 - ✅ **Phase 6** — Settings, launch at login, low-battery toast, update checker
   (the check works against GitHub; the toasts are untested on screen).
 - ✅ **Phase 7** — diagnostics report, `scripts/build-windows.ps1` (self-contained
-  x64 + arm64 zips with SHA-256), README section, `.github/workflows/windows.yml`
-  (build + test on push, zips on `v*` tags).
+  x64 + arm64 builds; `-Installer` for branded Inno Setup installers, `-Zip` for
+  portable zips, SHA-256 for both), README, `.github/workflows/windows.yml`
+  (build + test on push, installers and zips on `v*` tags).
+- ✅ **Installer** (`windows/Installer/JBLControl.iss`): per-user, no admin;
+  banner art from `make-windows-icons.ps1`; optional sign-in start and desktop
+  shortcut; shortcuts carry the app's AppUserModelID; closes the running app
+  before upgrading or uninstalling; the uninstaller also removes what the app
+  writes itself (Run value, notification registration, photo cache). Its license
+  page includes the bundled runtimes' terms (the Windows App SDK's redistribution
+  terms require users to accept them); full texts ship in `{app}\licenses`.
+  Install, upgrade-over-running-app and uninstall verified on this PC.
 - Targets **.NET 10** (LTS); .NET 8 support ends 2026-11-10.
 
 **Ready for a preview release, not 1.0:** only the Flip 7 has been tried from

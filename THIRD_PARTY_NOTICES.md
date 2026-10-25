@@ -62,3 +62,18 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
+
+## Windows release components
+
+The Windows downloads (`JBLControl-win-*-setup.exe` and `.zip`) are self-contained builds, so they also
+redistribute these components, unmodified. Their full license texts are installed in the `licenses` folder
+next to `JBLControl.exe`, and the installer asks users to accept them.
+
+- **Microsoft Windows App SDK** (WinUI 3, windowing, runtime): Microsoft Software License Terms for the
+  Windows App SDK, which permit redistributing the files the SDK's NuGet packages place with an app.
+  https://github.com/microsoft/WindowsAppSDK
+- **Microsoft .NET runtime**: Microsoft Software License Terms for the Microsoft .NET Library (the terms of
+  Microsoft's .NET builds; the source is MIT-licensed), with the third-party notices that ship with .NET.
+  https://github.com/dotnet/runtime
+- **.NET Community Toolkit** (CommunityToolkit.Mvvm): MIT License, Copyright (c) .NET Foundation and
+  Contributors. https://github.com/CommunityToolkit/dotnet

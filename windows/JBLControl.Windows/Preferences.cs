@@ -132,7 +132,10 @@ public static class CrashLog
         {
             string folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "JBLControl");
             Directory.CreateDirectory(folder);
-            File.AppendAllText(Path.Combine(folder, "errors.log"), $"{DateTimeOffset.Now:O} {AppInfo.Version}\n{ex}\n\n");
+            string file = Path.Combine(folder, "errors.log");
+            // Keep it small: start over once it passes 512 KB rather than grow forever.
+            if (File.Exists(file) && new FileInfo(file).Length > 512 * 1024) File.Delete(file);
+            File.AppendAllText(file, $"{DateTimeOffset.Now:O} {AppInfo.Version}\n{ex}\n\n");
         }
         catch (Exception)
         {

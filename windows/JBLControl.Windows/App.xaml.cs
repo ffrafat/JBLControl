@@ -49,6 +49,7 @@ public partial class App : Application
         }
 
         Notifier.Register();
+        LoginItem.RefreshPath();
         var ui = DispatcherQueue.GetForCurrentThread();
         speaker = new SpeakerManager(ui);
         keepAwake = new KeepAwake(speaker, ui);
