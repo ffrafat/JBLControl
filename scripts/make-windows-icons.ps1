@@ -1,0 +1,137 @@
+<#
+.SYNOPSIS
+    Generates the Windows app's icons from the Mac icon artwork (Resources/AppIcon.icon).
+
+.DESCRIPTION
+    - windows/JBLControl.Windows/Assets/AppIcon.ico: the Mac app icon (graphite boombox with EQ sliders
+      on the sunset gradient) as a Windows icon, 16-256 px.
+    - windows/JBLControl.Windows/TrayIcons.Generated.cs: the same icon as raw pixels at each
+      notification-area size, which TrayIcon composites the battery bar over at runtime.
+
+    Rasterizes the SVGs with headless Microsoft Edge, so it needs nothing beyond Windows itself.
+    Re-run after changing the Mac icon (scripts/make-icon.py):  powershell -File scripts/make-windows-icons.ps1
+#>
+$ErrorActionPreference = 'Stop'
+Add-Type -AssemblyName System.Drawing
+
+$root = Split-Path -Parent $PSScriptRoot
+$assets = Join-Path $root 'Resources/AppIcon.icon/Assets'
+$appDir = Join-Path $root 'windows/JBLControl.Windows'
+$edge = @("${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe", "$env:ProgramFiles\Microsoft\Edge\Application\msedge.exe") |
+    Where-Object { Test-Path $_ } | Select-Object -First 1
+if (-not $edge) { throw 'Microsoft Edge not found.' }
+
+$work = Join-Path ([IO.Path]::GetTempPath()) "jblcontrol-icons-$PID"
+New-Item -ItemType Directory -Force $work | Out-Null
+$userData = Join-Path $work 'profile'
+
+function Inner([string]$svgFile) {
+    $text = Get-Content -Raw $svgFile
+    return [regex]::Match($text, '<svg[^>]*>(.*)</svg>', 'Singleline').Groups[1].Value
+}
+
+# Renders the page in a roomy viewport (headless windows have a minimum size) and crops the top-left w x h.
+function Render([string]$html, [int]$w, [int]$h, [string]$png) {
+    $page = Join-Path $work ([IO.Path]::GetFileNameWithoutExtension($png) + '.html')
+    Set-Content -Path $page -Value $html -Encoding UTF8
+    $shot = "$png.full.png"
+    $uri = ([Uri]$page).AbsoluteUri
+    $edgeArgs = @('--headless=new', '--disable-gpu', '--hide-scrollbars', '--force-device-scale-factor=1',
+        '--default-background-color=00000000', "`"--user-data-dir=$userData`"", '--window-size=600,600', "`"--screenshot=$shot`"", $uri)
+    $p = Start-Process -FilePath $edge -ArgumentList $edgeArgs -Wait -PassThru -WindowStyle Hidden
+    if (-not (Test-Path $shot)) { throw "Edge didn't render $png (exit $($p.ExitCode))" }
+    $full = [Drawing.Bitmap]::FromFile($shot)
+    $crop = $full.Clone((New-Object Drawing.Rectangle 0, 0, $w, $h), [Drawing.Imaging.PixelFormat]::Format32bppArgb)
+    $crop.Save($png, [Drawing.Imaging.ImageFormat]::Png)
+    $crop.Dispose(); $full.Dispose()
+}
+
+$page = '<!doctype html><html><head><style>html,body{margin:0;padding:0;background:transparent;overflow:hidden}svg{display:block}</style></head><body>{0}</body></html>'
+$body = Inner (Join-Path $assets 'body.svg')
+$controls = Inner (Join-Path $assets 'controls.svg')
+
+# --- App icon ---------------------------------------------------------------------------------------
+# The Mac icon's layers on its gradient, in a Windows 11-style rounded square (macOS masks its own squircle).
+# Glass is approximated with a top highlight on the speaker; the shadows follow icon.json's opacities.
+$iconSvg = @"
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="{0}" height="{0}">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FF9429"/><stop offset="1" stop-color="#E62E33"/></linearGradient>
+    <linearGradient id="sheen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0.22"/><stop offset="0.55" stop-color="#FFFFFF" stop-opacity="0"/></linearGradient>
+    <filter id="s1" x="-20%" y="-20%" width="140%" height="160%"><feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#000" flood-opacity="0.5"/></filter>
+    <filter id="s2" x="-20%" y="-20%" width="140%" height="160%"><feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#000" flood-opacity="0.4"/></filter>
+    <clipPath id="sq"><rect x="40" y="40" width="944" height="944" rx="210"/></clipPath>
+  </defs>
+  <g clip-path="url(#sq)">
+    <rect width="1024" height="1024" fill="url(#bg)"/>
+    <g filter="url(#s1)">$body</g>
+    <g style="mix-blend-mode:screen">$($body -replace '#4A4A50', 'url(#sheen)')</g>
+    <g filter="url(#s2)">$controls</g>
+  </g>
+</svg>
+"@
+$sizes = 16, 20, 24, 32, 40, 48, 64, 128, 256
+$pngs = @()
+foreach ($s in $sizes) {
+    $png = Join-Path $work "icon-$s.png"
+    Render ($page -replace '\{0\}', ($iconSvg -replace '\{0\}', $s)) $s $s $png
+    $pngs += , @($s, [IO.File]::ReadAllBytes($png))
+}
+
+# ICO with PNG-compressed entries (supported since Windows Vista).
+New-Item -ItemType Directory -Force (Join-Path $appDir 'Assets') | Out-Null
+$ico = Join-Path $appDir 'Assets/AppIcon.ico'
+$ms = New-Object IO.MemoryStream
+$bw = New-Object IO.BinaryWriter $ms
+$bw.Write([uint16]0); $bw.Write([uint16]1); $bw.Write([uint16]$pngs.Count)
+$offset = 6 + 16 * $pngs.Count
+foreach ($entry in $pngs) {
+    $s = $entry[0]; $data = $entry[1]
+    $dim = if ($s -ge 256) { 0 } else { $s }
+    $bw.Write([byte]$dim); $bw.Write([byte]$dim); $bw.Write([byte]0); $bw.Write([byte]0)
+    $bw.Write([uint16]1); $bw.Write([uint16]32); $bw.Write([uint32]$data.Length); $bw.Write([uint32]$offset)
+    $offset += $data.Length
+}
+foreach ($entry in $pngs) { $bw.Write($entry[1]) }
+[IO.File]::WriteAllBytes($ico, $ms.ToArray())
+Copy-Item (Join-Path $work 'icon-256.png') (Join-Path $appDir 'Assets/AppIcon.png') -Force
+Write-Host "wrote $ico"
+
+# --- Tray icon -------------------------------------------------------------------------------------
+# The full app icon as straight-alpha RGBA at every notification-area size, so TrayIcon can composite
+# the battery bar and Keep Awake badge over it at runtime without an image decoder.
+$lines = @()
+foreach ($s in 16, 20, 24, 28, 32, 36, 40, 48, 64) {
+    $png = Join-Path $work "tray-$s.png"
+    Render ($page -replace '\{0\}', ($iconSvg -replace '\{0\}', $s)) $s $s $png
+    $bmp = [Drawing.Bitmap]::FromFile($png)
+    $rgba = New-Object byte[] ($s * $s * 4)
+    for ($y = 0; $y -lt $s; $y++) {
+        for ($x = 0; $x -lt $s; $x++) {
+            $c = $bmp.GetPixel($x, $y); $i = ($y * $s + $x) * 4
+            $rgba[$i] = $c.R; $rgba[$i + 1] = $c.G; $rgba[$i + 2] = $c.B; $rgba[$i + 3] = $c.A
+        }
+    }
+    $bmp.Dispose()
+    $lines += "        [$s] = `"$([Convert]::ToBase64String($rgba))`","
+}
+$cs = @"
+// <auto-generated>
+// Generated by scripts/make-windows-icons.ps1 from Resources/AppIcon.icon. Do not edit.
+// </auto-generated>
+namespace JBLControl.Windows;
+
+/// <summary>The app icon as straight-alpha RGBA pixels, keyed by (square) size.</summary>
+internal static class TrayIcons
+{
+    public static readonly Dictionary<int, string> Rgba = new()
+    {
+$($lines -join "`r`n")
+    };
+}
+"@
+Remove-Item (Join-Path $appDir 'TrayShapes.Generated.cs') -ErrorAction SilentlyContinue
+Set-Content -Path (Join-Path $appDir 'TrayIcons.Generated.cs') -Value $cs -Encoding UTF8
+Write-Host "wrote $(Join-Path $appDir 'TrayIcons.Generated.cs')"
+
+Remove-Item -Recurse -Force $work -ErrorAction SilentlyContinue
