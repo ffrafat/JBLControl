@@ -12,7 +12,7 @@ public class CodecTests
     [InlineData(0x2107, ProtocolFamily.LegacyParametric, SupportLevel.Verified)] // Flip 7
     [InlineData(0x20E3, ProtocolFamily.LegacyParametric, SupportLevel.Verified)] // Charge 6
     [InlineData(0x20DC, ProtocolFamily.LegacyLevels, SupportLevel.Beta)] // Xtreme 4
-    [InlineData(0x2040, ProtocolFamily.LegacySimple, SupportLevel.Beta)] // Charge 5
+    [InlineData(0x2040, ProtocolFamily.LegacySimple, SupportLevel.Verified)] // Charge 5 (issue #1)
     [InlineData(0x214E, ProtocolFamily.Protocol4Parametric, SupportLevel.Experimental)] // Boombox 4
     [InlineData(0x2168, ProtocolFamily.Protocol4Quantized, SupportLevel.Experimental)] // Go 5
     [InlineData(0x0023, ProtocolFamily.InfoOnly, SupportLevel.Unsupported)] // Flip 3 (SPP)
@@ -171,5 +171,53 @@ public class CodecTests
         Assert.False(SpeakerIdentity.Matches("FFR JBL Flip 7", 0x2107, "Kitchen", 0x2107));
         Assert.False(SpeakerIdentity.Matches("JBL Flip 7", 0x2107, "JBL Flip 7", 0x20E3));
         Assert.False(SpeakerIdentity.Matches("", 0x2107, "JBL Flip 7", 0x2107));
+    }
+
+    // MARK: Charge 5, captured by @shortrockerz (issue #1): firmware 0.8.9.0, macOS 15.7.9
+
+    [Fact]
+    public void Charge5InfoParses()
+    {
+        var d = new FrameDecoder();
+        var frames = d.Feed(Bytes("""
+            AA 12 0F 00 C1 0C 4A 42 4C 20 43 68 61 72 67 65 20 35 AA 12 04 00 42 20 40
+            AA 12 03 00 44 94 AA 42 04 00 08 09 00
+            """));
+        var tokens = frames.Take(3).Select(f => InfoToken.Parse(f.Payload)).Where(t => t is not null).ToList();
+        Assert.Equal(new InfoToken[]
+        {
+            new InfoToken.Name("JBL Charge 5"),
+            new InfoToken.ProductId(0x2040),
+            new InfoToken.Battery(20, true),
+        }, tokens);
+        Assert.Equal("0.8.9.0", FirmwareVersion.Format(frames.Last().Payload));
+    }
+
+    [Fact]
+    public void Charge5EqReplySplitAcrossNotifications()
+    {
+        var model = Catalog.Model(0x2040)!;
+        var codec = new EQCodec(model);
+        var d = new MessageDecoder();
+        // The 18-byte 0x6D reply arrived as two notifications.
+        Assert.Empty(d.Feed(Bytes("AA 6D 12 02 01 01 03 01 00 02 00")));
+        var reply = d.Feed(Bytes("03 00 C1 03 01 00 02 00 03 00")).First();
+        // Before the write: category 01 active; custom C1 at 0/0/0.
+        Assert.Equal(new EQSnapshot(0x01, new float[] { 0, 0, 0 }), codec.Parse(reply));
+
+        Assert.Empty(d.Feed(Bytes("AA 6D 12 02 C1 01 03 01 00 02 00")));
+        var after = d.Feed(Bytes("03 00 C1 03 01 00 02 00 03 00")).First();
+        Assert.Equal(new EQSnapshot(0xC1, new float[] { 0, 0, 0 }), codec.Parse(after));
+    }
+
+    [Fact]
+    public void Charge5CustomWriteMatchesCaptureAndIsAcknowledged()
+    {
+        var model = Catalog.Model(0x2040)!;
+        Assert.False(model.WritesNeedOptIn);
+        Assert.Equal(new[] { Bytes("AA 6E 08 C1 03 01 00 02 00 03 00") }, new EQCodec(model).SetCustom(new float[] { 0, 0, 0 }));
+        var d = new FrameDecoder();
+        // DEV_ACK for 0x6E with status 00 (success).
+        Assert.Equal(new[] { new Frame((byte)0x00, new byte[] { 0x6E, 0x00 }) }, d.Feed(Bytes("AA 00 02 6E 00")));
     }
 }
