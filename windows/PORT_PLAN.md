@@ -33,8 +33,15 @@ diagnostics, settings) rather than a cut-down first pass.
   harness (`SpeakerManager.cs`, plain methods, not yet `ObservableObject`) using
   `Windows.Devices.Bluetooth` to scan/connect/stream info+EQ to stdout. Builds
   clean and runs against real Bluetooth hardware (confirmed: `BluetoothLEAdvertisementWatcher`
-  starts without error, no permission prompts on this machine), but **not yet
-  confirmed against a real JBL speaker** — do that next. The TFM
+  starts without error, no permission prompts on this machine). **Verified
+  against a real JBL Flip 7** (PID `0x2107`, firmware 0.7.2.0) on a second
+  Windows 11 machine (Intel Wireless Bluetooth): discovered as Verified,
+  connected with **no pairing/bonding prompt**, and read name, product ID,
+  color, battery, firmware and EQ state (`active=0x03`, 7 bands) correctly.
+  Known nit: the `Firmware:` line prints twice per connect — likely two info
+  responses each carrying the firmware token; dedupe before this output feeds
+  the UI. Remaining Phase 2 work: reconnect handling and multi-speaker/address-rotation
+  dedup (§2). The TFM
   (`net8.0-windows10.0.19041.0`) was adopted here already rather than deferred
   to Phase 4.
 - ⬜ Phases 3–7 not started.
@@ -42,7 +49,13 @@ diagnostics, settings) rather than a cut-down first pass.
 To resume: `cd windows && dotnet test JBLControl.Windows.slnx` should show
 29/29 passing. Then turn a JBL speaker on nearby and
 `dotnet run --project JBLControl.Windows/JBLControl.Windows.csproj` to continue
-Phase 2 verification.
+Phase 2 work.
+
+New-machine setup: .NET 10 SDK (reads `.slnx`, builds the `net8.0` targets)
+plus the .NET 8 runtime. If Windows 11 **Smart App Control** is on, it blocks
+the unsigned local build outputs ("An Application Control policy has blocked
+this file") — both the test DLL and the harness exe — so it has to be off on
+a dev machine.
 
 ## 1. Project layout
 
@@ -110,9 +123,8 @@ Add `windows/**/bin,obj` and `windows/build/` to `.gitignore` (done).
 - **Disconnect**: `BluetoothLEDevice.ConnectionStatusChanged` reconnect handling
   is **not yet ported** (current harness connects once and doesn't retry).
 - No appxmanifest capability needed for an unpackaged exe — just the user's
-  Bluetooth toggle + radio on. **Open**: whether Windows' GATT stack ever
-  requires pairing/bonding that macOS doesn't — not yet hit in testing, but
-  also not yet tested against a real speaker at all.
+  Bluetooth toggle + radio on. No pairing/bonding needed for the Flip 7
+  (verified on real hardware); still unconfirmed for other models.
 
 ## 3. Protocol/catalog C# library — ✅ done (Phase 1)
 
@@ -259,8 +271,8 @@ alongside the existing `swift test` gate is **not yet added**.
 
 0. ✅ Solution/project scaffolding, CI skeleton.
 1. ✅ Protocol/catalog library + full xunit port, catalog-generator extension.
-2. 🚧 Bare BLE connect + live battery/info display — harness built, **needs
-   verification against a real JBL speaker next**, then reconnect/dedup logic.
+2. 🚧 Bare BLE connect + live battery/info display — harness built and
+   **verified against a real Flip 7**; reconnect/dedup logic next.
 3. ⬜ EQ read/write through `EQCodec`, including the write-coalescing queue.
 4. ⬜ Tray icon + borderless flyout shell + full XAML view port + Win2D curve +
    Fluent styling pass.
@@ -279,7 +291,7 @@ alongside the existing `swift test` gate is **not yet added**.
    OS-hidden UUID) — verify empirically against a real rotating-address model
    (Go5/Xtreme5); the Mac app's verified behavior is currently Flip-7/Charge-5/Charge-6-centric.
 4. Confirm Windows' GATT stack doesn't require pairing/bonding that macOS
-   doesn't — **still open, not yet tested against real hardware**.
+   doesn't — **confirmed not needed for the Flip 7**; other models untested.
 5. Mica/Acrylic need WinAppSDK 1.3+, most reliable on Windows 11 22H2+; falls
    back to solid color on older builds (no crash risk).
 6. `GattCharacteristic.ValueChanged` can silently stop firing if any object in
@@ -290,7 +302,8 @@ alongside the existing `swift test` gate is **not yet added**.
 
 - Phase 1: `dotnet test` in `windows/` reproduces all ported fixtures green. **Passing.**
 - Phase 2+: run the app against a real JBL speaker and confirm battery/model/color
-  appear and update live. **Not yet done — next step.**
+  appear and update live. **Done for the Flip 7** (initial read confirmed;
+  live updates over a longer session not yet observed).
 - Phase 3: drag the custom EQ sliders against real hardware and confirm the
   speaker's state (read back via `AA 98`/`0E01` query) matches what was sent,
   same as the Swift round-trip tests assert.
