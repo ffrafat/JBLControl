@@ -2,6 +2,7 @@ using System.Globalization;
 using JBLControlKit.Windows;
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
@@ -15,7 +16,8 @@ namespace JBLControl.Windows;
 /// The custom equalizer's band columns and combined response curve. Ported from
 /// Sources/JBLControl/Views/EqualizerView.swift (BandColumn + ResponseCurve): bars are evenly
 /// spaced, so x follows band index and the curve interpolates frequency logarithmically between them.
-/// Each column is dragged with raw pointer events rather than a rotated Slider.
+/// Each column is dragged with raw pointer events rather than a rotated Slider; an invisible Slider per
+/// column carries keyboard and screen-reader access.
 /// </summary>
 public sealed class EqualizerControl : Grid
 {
@@ -37,12 +39,18 @@ public sealed class EqualizerControl : Grid
         IsHitTestVisible = false,
     };
 
+    private readonly SolidColorBrush thumbStroke = new(Color.FromArgb(0x40, 0, 0, 0));
     private readonly LinearGradientBrush boostBrush = Gradient(up: true);
     private readonly LinearGradientBrush cutBrush = Gradient(up: false);
     private readonly List<Rectangle> tracks = new();
     private readonly List<Rectangle> fills = new();
     private readonly List<Ellipse> thumbs = new();
     private readonly List<Border> bubbles = new();
+
+    // One invisible Slider per band, laid over its column: the keyboard (Tab, arrow keys) and screen readers
+    // (UI Automation's RangeValue) reach the bands through these. Pointers go to the canvas, as before.
+    private readonly List<Slider> sliders = new();
+    private bool syncingSliders;
 
     private IReadOnlyList<EQBandSpec> specs = Array.Empty<EQBandSpec>();
     private IReadOnlyList<float> gains = Array.Empty<float>();
@@ -51,6 +59,7 @@ public sealed class EqualizerControl : Grid
     private bool interactive;
     private int dragging = -1;
     private int hovering = -1;
+    private int focused = -1;
 
     public EqualizerControl()
     {
@@ -93,11 +102,13 @@ public sealed class EqualizerControl : Grid
     private void Rebuild(IReadOnlyList<EQBandSpec> newSpecs)
     {
         specs = newSpecs;
-        foreach (var e in tracks.Concat<UIElement>(fills).Concat(thumbs).Concat(bubbles)) canvas.Children.Remove(e);
+        foreach (var e in tracks.Concat<UIElement>(fills).Concat(thumbs).Concat(bubbles).Concat(sliders)) canvas.Children.Remove(e);
         tracks.Clear();
         fills.Clear();
         thumbs.Clear();
         bubbles.Clear();
+        sliders.Clear();
+        focused = -1;
         labels.Children.Clear();
         labels.ColumnDefinitions.Clear();
 
@@ -113,7 +124,7 @@ public sealed class EqualizerControl : Grid
             var thumb = new Ellipse
             {
                 Width = ThumbSize, Height = ThumbSize, Fill = new SolidColorBrush(Colors.White),
-                Stroke = new SolidColorBrush(Color.FromArgb(0x40, 0, 0, 0)), StrokeThickness = 1,
+                Stroke = thumbStroke, StrokeThickness = 1,
                 RenderTransformOrigin = new Point(0.5, 0.5), RenderTransform = new ScaleTransform(), IsHitTestVisible = false,
             };
             var bubble = new Border
@@ -124,10 +135,42 @@ public sealed class EqualizerControl : Grid
                 BorderThickness = new Thickness(1), IsHitTestVisible = false, Visibility = Visibility.Collapsed,
                 Child = new TextBlock { FontSize = 11, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, HorizontalAlignment = HorizontalAlignment.Center },
             };
+            var spec = specs[i];
+            var slider = new Slider
+            {
+                Orientation = Orientation.Vertical,
+                Minimum = spec.RangeLow,
+                Maximum = spec.RangeHigh,
+                StepFrequency = spec.Step,
+                SmallChange = spec.Step,
+                LargeChange = spec.Step * 4,
+                Height = BarHeight,
+                Opacity = 0,
+                IsHitTestVisible = false,
+                IsThumbToolTipEnabled = false,
+            };
+            AutomationProperties.SetName(slider, $"{spec.Label} band");
+            int band = i;
+            slider.ValueChanged += (_, e) =>
+            {
+                if (!syncingSliders && interactive) GainChanged?.Invoke(band, (float)e.NewValue);
+            };
+            slider.GotFocus += (_, _) =>
+            {
+                focused = band;
+                Layout();
+            };
+            slider.LostFocus += (_, _) =>
+            {
+                if (focused == band) focused = -1;
+                Layout();
+            };
+
             tracks.Add(track);
             fills.Add(fill);
             thumbs.Add(thumb);
             bubbles.Add(bubble);
+            sliders.Add(slider);
 
             labels.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             var label = new TextBlock { Text = specs[i].Label, FontSize = 11, Foreground = secondary, HorizontalAlignment = HorizontalAlignment.Center };
@@ -140,6 +183,7 @@ public sealed class EqualizerControl : Grid
         foreach (var f in fills) canvas.Children.Insert(at++, f);
         foreach (var t in thumbs) canvas.Children.Add(t);
         foreach (var b in bubbles) canvas.Children.Add(b);
+        foreach (var s in sliders) canvas.Children.Add(s);
     }
 
     /// <summary>Display range in dB: a little headroom past the widest band.</summary>
@@ -187,14 +231,26 @@ public sealed class EqualizerControl : Grid
             var thumb = thumbs[i];
             thumb.Visibility = editable ? Visibility.Visible : Visibility.Collapsed;
             thumb.Opacity = interactive ? 1 : 0.6;
-            double scale = dragging == i ? 1.2 : hovering == i ? 1.08 : 1;
+            double scale = dragging == i ? 1.2 : hovering == i || focused == i ? 1.08 : 1;
             var transform = (ScaleTransform)thumb.RenderTransform;
             transform.ScaleX = transform.ScaleY = scale;
+            // The keyboard focus shows on the thumb, since its slider is invisible.
+            thumb.Stroke = focused == i ? (Brush)Application.Current.Resources["JblAccentBrush"] : thumbStroke;
+            thumb.StrokeThickness = focused == i ? 2 : 1;
             Canvas.SetLeft(thumb, x - ThumbSize / 2);
             Canvas.SetTop(thumb, valueY - ThumbSize / 2);
 
+            var slider = sliders[i];
+            slider.Width = column;
+            slider.Visibility = editable ? Visibility.Visible : Visibility.Collapsed;
+            slider.IsEnabled = interactive;
+            Canvas.SetLeft(slider, column * i);
+            syncingSliders = true;
+            slider.Value = value;
+            syncingSliders = false;
+
             var bubble = bubbles[i];
-            bool show = interactive && (dragging == i || (dragging < 0 && hovering == i));
+            bool show = interactive && (dragging == i || (dragging < 0 && (hovering == i || focused == i)));
             bubble.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
             if (show)
             {

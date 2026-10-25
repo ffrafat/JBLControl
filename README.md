@@ -169,6 +169,8 @@ Nothing else to install: the download includes everything it needs.
 
 ### Using it
 
+<img src="docs/images/windows-app.png" width="640" alt="JBLControl on Windows: the speaker in the sidebar, presets, and the custom 7-band equalizer with its response curve">
+
 - The **window** lists each nearby speaker on the left; click one to switch to it. The connected speaker is
   shown in full: presets, the custom equalizer, battery, firmware and Keep Awake. **Settings** and **About**
   are at the bottom.
