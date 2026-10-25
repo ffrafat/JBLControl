@@ -6,6 +6,8 @@
 
 <p align="center"><b>JBL speaker control on your Mac and Windows PC.</b></p>
 
+<p align="center"><a href="https://ffrafat.github.io/JBLControl/"><b>ffrafat.github.io/JBLControl</b></a></p>
+
 <p align="center">
   <a href="../../releases/latest"><img src="https://img.shields.io/github/v/release/ffrafat/JBLControl?label=download" alt="Latest release"></a>
   <img src="https://img.shields.io/badge/macOS-14%2B-blue" alt="macOS 14+">
