@@ -16,7 +16,9 @@
 </p>
 
 <p align="center">
-  <img src="docs/images/screenshot.png" width="400" alt="JBLControl's menu bar panel: a JBL Flip 7 with battery level, EQ presets and the Energetic response curve">
+  <img src="docs/images/screenshot.png" width="360" alt="JBLControl's menu bar panel on a Mac: a JBL Flip 7 with battery level, EQ presets and the Energetic response curve">
+  &nbsp;
+  <img src="docs/images/windows-tray.png" width="360" alt="JBLControl's tray panel on Windows: the same Flip 7, presets and custom equalizer">
 </p>
 
 Battery level, EQ presets and a custom equalizer for JBL Flip, Charge, Xtreme, Go, Clip, Pulse, Boombox and
@@ -162,6 +164,8 @@ Nothing else to install: the download includes everything it needs.
 2. **Run it.** Windows will probably warn you first; see [below](#if-windows-blocks-jblcontrol).
    The installer doesn't need administrator rights. You can choose to start JBLControl when you sign in
    and to add a desktop shortcut.
+
+   <img src="docs/images/windows-install.png" width="480" alt="The JBLControl installer's welcome page on Windows">
 3. **Finish**, and JBLControl opens. Turn your JBL speaker on nearby; it finds it by itself.
 
 > Close the JBL Portable app on your phone if JBLControl can't connect: speakers accept one control

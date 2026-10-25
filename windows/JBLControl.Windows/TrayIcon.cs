@@ -350,6 +350,9 @@ internal static class Native
     public struct POINT { public int X, Y; }
 
     [StructLayout(LayoutKind.Sequential)]
+    public struct RECT { public int Left, Top, Right, Bottom; }
+
+    [StructLayout(LayoutKind.Sequential)]
     public struct ICONINFO
     {
         [MarshalAs(UnmanagedType.Bool)] public bool fIcon;
@@ -443,6 +446,14 @@ internal static class Native
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool GetCursorPos(out POINT point);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool GetWindowRect(IntPtr hwnd, out RECT rect);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool GetClientRect(IntPtr hwnd, out RECT rect);
 
     [DllImport("user32.dll")]
     public static extern int GetSystemMetrics(int index);

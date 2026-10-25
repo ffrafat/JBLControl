@@ -165,6 +165,11 @@
   .platform dt { color: var(--muted); }
   .platform dd { margin: 0; }
   .platform .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+  /* Each card leads with its app, portrait (Mac panel) or landscape (Windows window), at one height. */
+  .platform .shot { margin: -8px -8px 6px; height: 280px; padding: 18px; border-radius: 16px; display: flex; justify-content: center; align-items: center;
+                    background: color-mix(in srgb, var(--line) 45%, transparent); }
+  .platform .shot img { height: 100%; width: auto; max-width: 100%; object-fit: contain; }
+  @media (max-width: 560px) { .platform .shot { height: 220px; } }
   @media (max-width: 800px) { .platforms { grid-template-columns: 1fr; } }
 
   /* Speakers */
@@ -262,7 +267,7 @@
                 fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"/>
         </svg>
         <span class="tag">7 bands · 125 Hz – 8 kHz</span>
-        <img src="images/mac-panel.png" width="864" height="1132"
+        <img id="hero-shot" src="images/mac-panel.png" width="864" height="1132"
              alt="JBLControl's panel on a Mac: a JBL Flip 7, connected, with presets Signature, Chill, Energetic, Vocal and Custom, and the custom 7-band equalizer with its response curve">
       </div>
     </div>
@@ -332,6 +337,10 @@
       </div>
       <div class="platforms">
         <article class="card platform">
+          <div class="shot">
+            <img src="images/mac-panel.png" width="864" height="1132" loading="lazy"
+                 alt="JBLControl's menu bar panel on a Mac, with the custom equalizer">
+          </div>
           <header>
             <div class="os">
               <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.4 12.6c0-2.4 2-3.5 2-3.6-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.1-2.8.9-3.5.9s-1.8-.9-3-.8C7 7.3 5.6 8.2 4.8 9.6c-1.6 2.8-.4 7 1.2 9.3.8 1.1 1.7 2.4 2.9 2.3 1.2 0 1.6-.7 3-.7s1.8.7 3 .7c1.3 0 2.1-1.1 2.8-2.3.9-1.3 1.3-2.6 1.3-2.6-.1 0-2.6-1-2.6-3.7ZM14.2 5.6c.6-.8 1-1.8.9-2.9-.9 0-2 .6-2.7 1.4-.6.7-1.1 1.8-1 2.8 1 .1 2.1-.5 2.8-1.3Z"/></svg>
@@ -351,6 +360,10 @@
         </article>
 
         <article class="card platform">
+          <div class="shot">
+            <img src="images/windows-app.png" width="1558" height="1037" loading="lazy"
+                 alt="JBLControl's window on Windows: the speaker in the sidebar, presets, and the custom 7-band equalizer">
+          </div>
           <header>
             <div class="os">
               <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 5.4 10.4 4.4v7.1H3Zm0 13.2 7.4 1v-7H3Zm8.3 1.1L21 21v-8.4h-9.7Zm0-15.4v7.2H21V3Z"/></svg>
@@ -396,7 +409,7 @@
         </article>
       </div>
       <div class="callout">
-        <p><b>Own one that isn't verified yet?</b> In JBLControl, choose ••• → Copy Diagnostics and paste it into a device report. That's usually all it takes.</p>
+        <p><b>Own one that isn't verified yet?</b> In JBLControl, choose Copy Diagnostics (on a Mac in the ••• menu, on Windows by right-clicking the tray icon) and paste it into a device report. That's usually all it takes.</p>
         <a class="btn btn-ghost" href="https://github.com/ffrafat/JBLControl/issues/new?template=device-report.yml">Send a device report</a>
       </div>
     </div>
@@ -418,8 +431,8 @@
         </ol>
       </div>
       <figure>
-        <img src="images/mac-install.png" width="1000" height="737" loading="lazy" alt="The JBLControl installer window on a Mac: drag the app onto the Applications folder, with a tip for the first launch">
-        <figcaption>The Mac installer tells you what to do on first launch.</figcaption>
+        <img id="install-shot" src="images/mac-install.png" width="1000" height="737" loading="lazy" alt="The JBLControl installer window on a Mac: drag the app onto the Applications folder, with a tip for the first launch">
+        <figcaption id="install-caption">The Mac installer tells you what to do on first launch.</figcaption>
       </figure>
     </div>
   </section>
@@ -474,23 +487,31 @@
   (async () => {
     const ua = navigator.userAgent;
     let platform = /Windows/i.test(ua) ? "win-x64" : /Mac/i.test(ua) ? "mac" : null;
-    try {
-      const hints = await navigator.userAgentData?.getHighEntropyValues?.(["architecture"]);
-      if (platform === "win-x64" && hints?.architecture === "arm") platform = "win-arm64";
-    } catch {}
 
-    // Windows visitors get their button first and highlighted, and a headline about the tray.
-    if (platform?.startsWith("win")) {
-      const mac = document.getElementById("dl-mac"), win = document.getElementById("dl-win");
+    // Windows visitors get their button first and highlighted, a headline about the tray, and the Windows
+    // app and installer in place of the Mac ones. Done before the first await, so the Mac shots don't flash.
+    const win = document.getElementById("dl-win");
+    if (platform === "win-x64") {
+      const mac = document.getElementById("dl-mac");
       mac.classList.replace("btn-primary", "btn-ghost");
       win.classList.replace("btn-ghost", "btn-primary");
       win.after(mac);
       document.getElementById("where").textContent = "right in your system tray.";
-      if (platform === "win-arm64") {
+      const show = (id, src, width, height, alt) => Object.assign(document.getElementById(id), { src, width, height, alt });
+      show("hero-shot", "images/windows-tray.png", 620, 825,
+        "JBLControl's tray panel on Windows: a JBL Flip 7, connected, with its presets and the custom 7-band equalizer");
+      show("install-shot", "images/windows-install.png", 1074, 845, "The JBLControl installer's welcome page on Windows");
+      document.getElementById("install-caption").textContent = "The Windows installer needs no administrator rights.";
+    }
+
+    try {
+      const hints = await navigator.userAgentData?.getHighEntropyValues?.(["architecture"]);
+      if (platform === "win-x64" && hints?.architecture === "arm") {
+        platform = "win-arm64";
         win.dataset.asset = "win-arm64";
         document.getElementById("dl-win-label").textContent = "Download for Windows (Arm)";
       }
-    }
+    } catch {}
 
     let release;
     try {

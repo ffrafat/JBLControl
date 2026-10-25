@@ -117,9 +117,16 @@ public sealed partial class TrayPanel : Window
         if (Root.XamlRoot is not { } xamlRoot || anchor is not { } a) return;
         Root.Measure(new Size(PanelWidth, double.PositiveInfinity));
         double scale = xamlRoot.RasterizationScale;
-        var size = new SizeInt32((int)Math.Ceiling(PanelWidth * scale), (int)Math.Ceiling(Root.DesiredSize.Height * scale));
-        var current = AppWindow.ClientSize;
-        if (current.Width != size.Width || current.Height != size.Height) AppWindow.ResizeClient(size);
+        // AppWindow.ResizeClient still budgets for the title bar SetBorderAndTitleBar removed, which left that much
+        // empty space under the footer; size the window from Win32's own frame-to-client difference instead.
+        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
+        Native.GetWindowRect(hwnd, out var outer);
+        Native.GetClientRect(hwnd, out var client);
+        var size = new SizeInt32(
+            (int)Math.Ceiling(PanelWidth * scale) + (outer.Right - outer.Left) - client.Right,
+            (int)Math.Ceiling(Root.DesiredSize.Height * scale) + (outer.Bottom - outer.Top) - client.Bottom);
+        var current = AppWindow.Size;
+        if (current.Width != size.Width || current.Height != size.Height) AppWindow.Resize(size);
         AppWindow.Move(new PointInt32(a.X - AppWindow.Size.Width, a.Y - AppWindow.Size.Height));
     }
 
