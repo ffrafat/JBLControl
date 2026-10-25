@@ -29,33 +29,65 @@ diagnostics, settings) rather than a cut-down first pass.
   the next catalog refresh). **29/29** tests passing in `JBLControlKit.Windows.Tests`
   (mirrors every Swift test byte-for-byte, including the Charge 5 hardware
   captures from issue #1).
-- 🚧 **Phase 2 in progress** — `JBLControl.Windows` is currently a **console**
-  harness (`SpeakerManager.cs`, plain methods, not yet `ObservableObject`) using
-  `Windows.Devices.Bluetooth` to scan/connect/stream info+EQ to stdout. Builds
-  clean and runs against real Bluetooth hardware (confirmed: `BluetoothLEAdvertisementWatcher`
-  starts without error, no permission prompts on this machine). **Verified
-  against a real JBL Flip 7** (PID `0x2107`, firmware 0.7.2.0) on a second
-  Windows 11 machine (Intel Wireless Bluetooth): discovered as Verified,
-  connected with **no pairing/bonding prompt**, and read name, product ID,
-  color, battery, firmware and EQ state (`active=0x03`, 7 bands) correctly.
-  Known nit: the `Firmware:` line prints twice per connect — likely two info
-  responses each carrying the firmware token; dedupe before this output feeds
-  the UI. Remaining Phase 2 work: reconnect handling and multi-speaker/address-rotation
-  dedup (§2). The TFM
-  (`net8.0-windows10.0.19041.0`) was adopted here already rather than deferred
-  to Phase 4.
-- ⬜ Phases 3–7 not started.
+- ✅ **Phase 2** — BLE connect + live info, **verified against a real JBL Flip 7**
+  (PID `0x2107`, firmware 0.7.2.0) on Windows 11 with Intel Wireless Bluetooth:
+  connects with **no pairing/bonding prompt**. Reconnect, the connect watchdog,
+  multi-speaker switching, address-rotation dedup, silent-speaker pruning and the
+  remembered speaker are ported from `SpeakerManager.swift`.
+- ✅ **Phase 3** — EQ through `EQCodec` with the write-coalescing queue. Preset
+  writes confirmed on the Flip 7 (written, then read back after a reconnect).
+  Custom-slider writes on hardware **not yet confirmed**.
+- ✅ **Phase 4** — WinUI 3 app (a different shell from §5's original plan, see
+  below): main window, tray icon, tray flyout, shared `SpeakerPanel` control.
+- ✅ **Phase 5** — Keep Awake (built, **not yet confirmed** to stop an auto power-off).
+- ✅ **Phase 6** — Settings, launch at login, low-battery toast, update checker
+  (the check works against GitHub; the toasts are untested on screen).
+- ✅ **Phase 7** — diagnostics report, `scripts/build-windows.ps1` (self-contained
+  x64 + arm64 zips with SHA-256), README section, `.github/workflows/windows.yml`
+  (build + test on push, zips on `v*` tags).
+- Targets **.NET 10** (LTS); .NET 8 support ends 2026-11-10.
 
-To resume: `cd windows && dotnet test JBLControl.Windows.slnx` should show
-29/29 passing. Then turn a JBL speaker on nearby and
-`dotnet run --project JBLControl.Windows/JBLControl.Windows.csproj` to continue
-Phase 2 work.
+**Ready for a preview release, not 1.0:** only the Flip 7 has been tried from
+Windows, and the checklist items marked unconfirmed above need a pass first.
 
-New-machine setup: .NET 10 SDK (reads `.slnx`, builds the `net8.0` targets)
-plus the .NET 8 runtime. If Windows 11 **Smart App Control** is on, it blocks
-the unsigned local build outputs ("An Application Control policy has blocked
-this file") — both the test DLL and the harness exe — so it has to be off on
-a dev machine.
+### How the build differs from the plan below
+
+- **Shell:** a normal main window opens at launch (speakers listed in the
+  NavigationView pane, the connected one in full, Settings and About as pages);
+  closing it leaves the app in the tray. A tray click opens a compact flyout
+  (`TrayPanel`, the Mac popover), a right-click the Mac panel's ••• menu, a
+  double-click the window. `--background` (used by the Run key) starts tray-only.
+- **Tray icon:** hand-rolled `Shell_NotifyIconW` (`TrayIcon.cs`), not
+  H.NotifyIcon, so it doesn't track a third party's WinAppSDK support. The icon
+  is the full-color app icon, faded while disconnected, with a dot for Keep Awake.
+- **Notifications:** the classic toast API with a per-user AppUserModelID in
+  `HKCU\Software\Classes\AppUserModelId`, not `AppNotificationManager` — that
+  needs the Windows App SDK's shared runtime package, which a self-contained app
+  doesn't have (fails with `0x8007007E`). Buttons open URLs directly (protocol
+  activation), so no COM activator.
+- **Keep Awake:** `MediaPlayer` playing an in-memory WAV on the chosen output
+  device, not NAudio. Output matched by containment ("Speakers (FFR JBL Flip 7)").
+- **EQ curve:** a XAML `Polyline`, not Win2D.
+- **Packages:** the WinUI / Foundation / InteractiveExperiences / Base parts of
+  the Windows App SDK 2.5.1, not the `Microsoft.WindowsAppSDK` bundle, which
+  would add ~60 MB of AI/ML runtimes (ONNX Runtime, DirectML) nothing uses.
+  Self-contained zips are ~75 MB; trimming (`PublishTrimmed`) could cut the 53 MB
+  `Microsoft.Windows.SDK.NET.dll` but needs the JSON settings moved to source-gen first.
+- **Versioning:** `Version`/`FileVersion` come from `Resources/Info.plist` at
+  build time, so both apps share one version number.
+- **Robustness:** every DispatcherQueue/timer/WndProc callback is guarded; an
+  exception escaping one fail-fasts the process (XAML's `UnhandledException`
+  never sees it). Errors go to `%LOCALAPPDATA%\JBLControl\errors.log`.
+
+### Working on it
+
+`dotnet test windows/JBLControl.Windows.slnx` (29/29), then
+`powershell -ExecutionPolicy Bypass -File scripts/build-windows.ps1 -Install -Run`.
+New machine: the .NET 10 SDK only. Windows 11 **Smart App Control** blocks
+unsigned local builds ("An Application Control policy has blocked this file"),
+so it has to be off on a dev machine — and end users with it on can't run the
+unsigned release either (README explains). Signing (e.g. Azure Trusted Signing)
+is the fix for both.
 
 ## 1. Project layout
 
@@ -71,23 +103,22 @@ windows/
     JBLProtocol.cs  Protocol4.cs  EQ.cs  EQCodec.cs  Models.cs  Catalog.Generated.cs
   JBLControlKit.Windows.Tests/      # xunit, mirrors Tests/JBLControlKitTests
     ProtocolTests.cs  CodecTests.cs  TestFixtures.cs
-  JBLControl.Windows/               # console harness today; WinUI 3 app from Phase 4
-    Program.cs  SpeakerManager.cs
-    # Phase 4 additions (not yet present):
-    App.xaml(.cs)  KeepAwakeService.cs  DiagnosticsReport.cs  TrayIconController.cs
-    Preferences.cs  UpdateChecker.cs  LoginItem.cs  PhotoStore.cs  AppInfo.cs
-    Views/
-      MainFlyoutPage.xaml(.cs)      # ← PanelView.swift
-      HeaderView.xaml(.cs)          # ← HeaderView.swift
-      EqualizerView.xaml(.cs) + EqResponseCurve.cs (Win2D)
-      PresetPicker.xaml(.cs)  SpeakerSwitcher.xaml(.cs)  SearchingView.xaml(.cs)
-      SpeakerArtwork.xaml(.cs)      # ← SpeakerArtwork.swift (see §5)
-      SettingsWindow.xaml(.cs)      # ← SettingsView.swift
-    Styles/Shared.xaml
+  JBLControl.Windows/               # the WinUI 3 app (as built; §5 was the original plan)
+    App.xaml(.cs)                   # ← main.swift AppDelegate: tray, windows, startup
+    MainWindow.xaml(.cs)            # speakers in the nav pane, detail, Settings, About
+    TrayPanel.xaml(.cs)             # ← StatusBarController's popover
+    SpeakerPanel.xaml(.cs)          # ← PanelView + HeaderView + PresetPicker + SearchingView
+                                    #   (+ SpeakerArtwork, SpeakerSwitcher chips), shared by both
+    EqualizerControl.cs             # ← EqualizerView (bands + response curve)
+    SettingsPages.cs                # ← SettingsView (General/Speaker/Updates/About)
+    SpeakerManager.cs  KeepAwake.cs  PhotoStore.cs  TrayIcon.cs
+    Preferences.cs                  # Preferences, AppInfo, CrashLog, Notifier
+    Services.cs                     # LoginItem, UpdateChecker, Diagnostics
+    TrayIcons.Generated.cs  Assets/AppIcon.ico|png   # scripts/make-windows-icons.ps1
 ```
 
-Add `windows/**/bin,obj` and `windows/build/` to `.gitignore` (done).
-`scripts/build-windows.ps1` sits next to `scripts/build-app.sh` (not yet written).
+`.gitignore` covers `windows/**/bin,obj` and `build/`.
+`scripts/build-windows.ps1` sits next to `scripts/build-app.sh`.
 
 ## 2. BLE layer (Windows.Devices.Bluetooth)
 
@@ -271,15 +302,16 @@ alongside the existing `swift test` gate is **not yet added**.
 
 0. ✅ Solution/project scaffolding, CI skeleton.
 1. ✅ Protocol/catalog library + full xunit port, catalog-generator extension.
-2. 🚧 Bare BLE connect + live battery/info display — harness built and
-   **verified against a real Flip 7**; reconnect/dedup logic next.
-3. ⬜ EQ read/write through `EQCodec`, including the write-coalescing queue.
-4. ⬜ Tray icon + borderless flyout shell + full XAML view port + Win2D curve +
-   Fluent styling pass.
-5. ⬜ Keep Awake (NAudio device polling + tone).
-6. ⬜ Settings window, Run-key login item, low-battery toast, update checker.
-7. ⬜ Diagnostics report, `build-windows.ps1` packaging, SmartScreen smoke test,
-   Windows README section.
+2. ✅ BLE connect + live battery/info, reconnect/dedup — verified on a Flip 7.
+3. ✅ EQ read/write through `EQCodec` with the write-coalescing queue (presets
+   verified on hardware; custom sliders not yet).
+4. ✅ Main window + tray icon + flyout + full XAML view port (Polyline curve,
+   not Win2D).
+5. ✅ Keep Awake (MediaPlayer, not NAudio) — not yet confirmed on hardware.
+6. ✅ Settings, Run-key login item, low-battery toast, update checker.
+7. ✅ Diagnostics report, `build-windows.ps1` packaging, Windows CI, README
+   section. Still to do: a SmartScreen smoke test of a downloaded release zip.
+8. ⬜ Before 1.0: the hardware checklist on a second model, code signing.
 
 ## 12. Risks / open questions
 

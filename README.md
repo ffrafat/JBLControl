@@ -20,6 +20,8 @@
 Battery level, EQ presets and a custom equalizer for JBL Flip, Charge, Xtreme, Go, Clip, Pulse, Boombox and
 more, in a native macOS menu bar panel (Liquid Glass on Tahoe). No phone, no JBL Portable app.
 
+**New: a [Windows version](#windows-preview) is in preview,** with the same features in a window and the system tray.
+
 > Unofficial. Not affiliated with or endorsed by JBL or Harman International.
 
 ## Features
@@ -148,6 +150,78 @@ Open `Package.swift` in Xcode to work on it. The build script signs with your Ap
 you have one, so the Bluetooth permission survives rebuilds. `scripts/build-app.sh --zip` also writes a
 release zip to `build/`.
 
+## Windows (preview)
+
+The same features as the Mac app, in a Windows 11-style window and the system tray: battery, presets, the
+custom equalizer, speaker switching, Keep Awake, low-battery alerts, launch at login, update checks and the
+diagnostics report.
+
+> **Preview.** Verified with a JBL Flip 7 on Windows 11. It should work with every model the Mac app
+> supports, but nobody has tried the others from Windows yet. Please send a
+> [device report](../../issues/new?template=device-report.yml) either way.
+
+**Requirements:** Windows 10 version 1809 or later (tested on Windows 11), with Bluetooth. Nothing else to
+install: the download includes everything it needs.
+
+### Install
+
+1. **Download** `JBLControl-win-x64-<version>.zip` from the [latest release](../../releases/latest)
+   (`win-arm64` for Arm PCs such as Snapdragon laptops).
+2. **Extract** it somewhere permanent, for example `%LOCALAPPDATA%\Programs\`. You get a `JBLControl` folder.
+3. **Open `JBLControl.exe`.** Windows will probably warn you first; see [below](#if-windows-blocks-jblcontrol).
+
+The JBLControl window opens and finds your speaker by itself. Each nearby speaker is listed on the left;
+click one to switch to it. **Closing the window keeps JBLControl running in the system tray** (the icons
+by the clock):
+
+- **Click** the tray icon for a compact panel with presets and the equalizer.
+- **Right-click** it for Keep Speaker Awake, Settings, Copy Diagnostics, About and **Quit**.
+- **Double-click** it, or open JBLControl again, to bring the window back.
+
+If the icon isn't visible, Windows put it in the hidden icons (**^**): drag it onto the taskbar, or turn it on
+in **Settings → Personalization → Taskbar → Other system tray icons**.
+
+**Start at login:** Settings → **Launch at login**. It then starts quietly in the tray.
+
+**Update:** quit JBLControl (right-click the tray icon → **Quit**), then replace the `JBLControl` folder with
+the new one.
+
+**Uninstall:** turn off **Launch at login**, quit JBLControl and delete its folder. Settings and cached
+speaker photos are in `%LOCALAPPDATA%\JBLControl`.
+
+Keep Awake works as on the Mac, while this PC is the speaker's sound output (choose it in
+**Settings → System → Sound**).
+
+### If Windows blocks JBLControl
+
+Like the Mac app, the Windows build isn't signed with a paid certificate yet, so Windows warns about it.
+
+- **"Windows protected your PC"** (SmartScreen): click **More info**, then **Run anyway**. Windows
+  remembers your choice for this copy.
+- **"Smart App Control blocked an app"**: Smart App Control only runs signed apps and has no per-app
+  exception, so JBLControl can't run while it's on. It's in **Windows Security → App & browser control →
+  Smart App Control**. Turning it off is your decision: on many PCs it can't be turned back on without
+  resetting Windows, while Microsoft Defender keeps protecting you either way.
+
+The same checks as for the Mac app apply: all the code is in this repository, each release is built from it
+with `scripts/build-windows.ps1`, and each release lists SHA-256 checksums. In PowerShell,
+`Get-FileHash ~\Downloads\JBLControl-win-x64-<version>.zip` should print the same value.
+
+### Build from source on Windows
+
+Needs the [.NET 10 SDK](https://dotnet.microsoft.com/download) (`winget install Microsoft.DotNet.SDK.10`);
+no Visual Studio required.
+
+```powershell
+git clone https://github.com/ffrafat/JBLControl.git
+cd JBLControl
+dotnet test windows/JBLControl.Windows.slnx            # protocol tests (the same fixtures as the Swift tests)
+powershell -ExecutionPolicy Bypass -File scripts/build-windows.ps1 -Install -Run   # build, install, launch
+```
+
+`-Install` copies it to `%LOCALAPPDATA%\Programs\JBLControl` with a Start menu entry. `-Zip` writes the x64
+and arm64 release zips and their SHA-256 checksums to `build/`. The plan and status of the port are in [windows/PORT_PLAN.md](windows/PORT_PLAN.md).
+
 ## How it works
 
 JBL speakers expose a control service over Bluetooth LE (`65786365-6C70-6F69-6E74-2E636F6D0000`).
@@ -158,6 +232,10 @@ JBLControl speaks the same protocol as JBL's own app. There are two generations,
 |---|---|
 | `Sources/JBLControlKit` | Protocol library: frame codecs, EQ codecs per family, model catalog. No UI, fully tested |
 | `Sources/JBLControl` | The menu bar app: CoreBluetooth, SwiftUI panel, diagnostics |
+| `windows/JBLControlKit.Windows` | The protocol library ported to C#, checked against the same test fixtures |
+| `windows/JBLControl.Windows` | The Windows app: WinUI 3 window and tray, Windows Bluetooth LE |
+| `scripts/build-windows.ps1` | Builds, installs and zips the Windows app |
+| `scripts/make-windows-icons.ps1` | Renders the Windows app and tray icons from the Mac icon |
 | `scripts/generate-catalog.py` | Regenerates the model catalog from the JBL app's model data |
 | `scripts/make-icon.py` | Regenerates the Liquid Glass app icon (`Resources/AppIcon.icon`, opens in Icon Composer) |
 | `Tools/Probe` | Standalone read-only BLE probe for reverse-engineering new models |

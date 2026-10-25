@@ -7,7 +7,7 @@
   -->
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
     <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
     <RootNamespace>JBLControl.Windows</RootNamespace>
     <AssemblyName>JBLControl</AssemblyName>
@@ -47,7 +47,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.5.1" />
+    <!--
+      The Windows App SDK's parts this app uses (the versions in the 2.5.1 bundle), rather than the
+      Microsoft.WindowsAppSDK bundle itself, which also ships its AI, ML (ONNX Runtime, DirectML), Widgets
+      and Search runtimes: well over 100 MB of a self-contained download that nothing here calls.
+    -->
+    <PackageReference Include="Microsoft.WindowsAppSDK.WinUI" Version="2.3.9" />
+    <PackageReference Include="Microsoft.WindowsAppSDK.InteractiveExperiences" Version="2.1.9" />
+    <PackageReference Include="Microsoft.WindowsAppSDK.Foundation" Version="2.3.12" />
+    <PackageReference Include="Microsoft.WindowsAppSDK.Base" Version="2.0.4" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
   </ItemGroup>
 
