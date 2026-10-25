@@ -1,0 +1,503 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>JBLControl — JBL speaker control for Mac and Windows</title>
+<meta name="description" content="Free, open-source app for JBL Bluetooth speakers. Battery, EQ presets and a 7-band custom equalizer for Flip, Charge, Xtreme, Go, Clip and more — in your Mac's menu bar or the Windows tray. No phone, no account.">
+<meta name="theme-color" content="#F26A21">
+<link rel="icon" type="image/png" href="images/favicon.png">
+<link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:title" content="JBLControl — JBL speaker control, right in your menu bar">
+<meta property="og:description" content="Battery, EQ presets and a custom equalizer for JBL speakers on Mac and Windows. Free and open source.">
+<meta property="og:image" content="https://ffrafat.github.io/JBLControl/images/og.png">
+<meta property="og:url" content="https://ffrafat.github.io/JBLControl/">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@600;700;800;900&family=Albert+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+  /* Layout: a wide hero (copy + the real panel on a sunset stage), then a feature grid led by the
+     equalizer, platform cards, a speaker table, install notes, FAQ. One centered column, max 1120px. */
+  :root {
+    --bg: #F7F5F3;
+    --surface: #FFFFFF;
+    --ink: #1D1714;
+    --muted: #6E625B;
+    --line: #E8E0DA;
+    --sunset-a: #FF9429;
+    --sunset-b: #E62E33;
+    --accent: #E9541E;
+    --accent-ink: #FFFFFF;
+    --graphite: #2A2624;
+    --verified: #1F9D55;
+    --beta: #D97706;
+    --experimental: #8B5CF6;
+    --display: "Schibsted Grotesk", "Avenir Next", system-ui, sans-serif;
+    --body: "Albert Sans", -apple-system, "Segoe UI", system-ui, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #131110;
+      --surface: #1C1917;
+      --ink: #F6EFEA;
+      --muted: #ABA099;
+      --line: #2F2A27;
+      --accent: #FF7A3D;
+      --accent-ink: #1A0E08;
+      --graphite: #0C0A09;
+      --verified: #3DD68C;
+      --beta: #FBBF24;
+      --experimental: #A78BFA;
+      color-scheme: dark;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: var(--body); font-size: 17px; line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  img { max-width: 100%; display: block; }
+  a { color: inherit; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding-inline: 20px; }
+  h1, h2, h3 { font-family: var(--display); line-height: 1.08; margin: 0; text-wrap: balance; letter-spacing: -0.02em; }
+  h2 { font-size: clamp(30px, 4.2vw, 44px); font-weight: 800; }
+  h3 { font-size: 20px; font-weight: 700; letter-spacing: -0.01em; }
+  p { margin: 0; }
+  .eyebrow { font-family: var(--mono); font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); }
+  .lede { color: var(--muted); font-size: 19px; max-width: 60ch; }
+  section { padding-block: 88px; }
+  .section-head { display: grid; gap: 14px; margin-bottom: 44px; max-width: 720px; }
+
+  /* Nav */
+  .nav { position: sticky; top: 0; z-index: 10; backdrop-filter: saturate(160%) blur(14px); -webkit-backdrop-filter: saturate(160%) blur(14px);
+         background: color-mix(in srgb, var(--bg) 78%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent); }
+  .nav .wrap { display: flex; align-items: center; gap: 24px; height: 64px; }
+  .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; font-family: var(--display); font-weight: 800; font-size: 19px; }
+  .brand img { width: 32px; height: 32px; }
+  .nav-links { display: flex; gap: 22px; margin-left: auto; font-size: 15px; font-weight: 500; }
+  .nav-links a { text-decoration: none; color: var(--muted); }
+  .nav-links a:hover { color: var(--ink); }
+  @media (max-width: 720px) { .nav-links .optional { display: none; } }
+
+  /* Buttons */
+  .btn { display: inline-flex; align-items: center; gap: 10px; padding: 14px 22px; border-radius: 14px; font-weight: 600; font-size: 16px;
+         text-decoration: none; border: 1px solid transparent; transition: transform .15s ease, box-shadow .15s ease; }
+  .btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+  .btn-primary { color: #fff; background: linear-gradient(135deg, var(--sunset-a), var(--sunset-b)); box-shadow: 0 10px 28px -10px rgba(230, 46, 51, .6); }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 14px 32px -10px rgba(230, 46, 51, .7); }
+  .btn-ghost { color: var(--ink); background: var(--surface); border-color: var(--line); }
+  .btn-ghost:hover { border-color: color-mix(in srgb, var(--accent) 50%, var(--line)); }
+  .btn svg { width: 20px; height: 20px; flex: none; }
+  .btn small { font-weight: 500; opacity: .8; font-size: 13px; }
+
+  /* Hero */
+  .hero { padding-block: 64px 96px; }
+  .hero-grid { display: grid; grid-template-columns: 1.05fr 1fr; gap: 56px; align-items: center; }
+  .hero h1 { font-size: clamp(40px, 5.4vw, 64px); font-weight: 900; }
+  .hero h1 .warm { background: linear-gradient(100deg, var(--sunset-a), var(--sunset-b)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .hero-copy { display: grid; gap: 24px; min-width: 0; }
+  .cta-row { display: flex; flex-wrap: wrap; gap: 12px; }
+  .meta-row { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 14px; color: var(--muted); }
+  .meta-row span { display: inline-flex; align-items: center; gap: 6px; }
+  .meta-row svg { width: 16px; height: 16px; color: var(--accent); }
+
+  /* The stage the panel sits on: sunset gradient, speaker-grille dots, a dB scale. */
+  .stage { position: relative; border-radius: 32px; padding: 40px 32px 0; min-height: 560px; overflow: hidden;
+           background: radial-gradient(120% 90% at 20% 0%, var(--sunset-a), var(--sunset-b) 70%); isolation: isolate; }
+  .stage::before { content: ""; position: absolute; inset: 0; z-index: -1; opacity: .22;
+                   background-image: radial-gradient(rgba(0,0,0,.55) 1.3px, transparent 1.6px); background-size: 11px 11px; }
+  .stage .scale { position: absolute; left: 18px; top: 40px; bottom: 40px; display: flex; flex-direction: column; justify-content: space-between;
+                  font-family: var(--mono); font-size: 11px; color: rgba(255,255,255,.75); z-index: -1; }
+  .stage .curve { position: absolute; inset: auto -10% 22% -10%; width: 120%; height: 220px; z-index: -1; opacity: .5; }
+  .stage img { width: min(380px, 88%); margin: 0 auto; filter: drop-shadow(0 30px 40px rgba(60, 10, 0, .45)); }
+  .stage .tag { position: absolute; right: 18px; top: 18px; font-family: var(--mono); font-size: 12px; color: #fff; background: rgba(0,0,0,.28);
+                padding: 5px 10px; border-radius: 99px; }
+
+  @media (max-width: 900px) {
+    .hero-grid { grid-template-columns: 1fr; }
+    .stage { min-height: 0; padding-bottom: 0; }
+  }
+
+  /* Features */
+  .features { display: grid; grid-template-columns: repeat(6, 1fr); gap: 18px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 22px; padding: 26px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+  .card p { color: var(--muted); font-size: 16px; }
+  .card .icon { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; color: #fff;
+                background: linear-gradient(135deg, var(--sunset-a), var(--sunset-b)); }
+  .card .icon svg { width: 22px; height: 22px; }
+  .f-eq { grid-column: span 4; grid-row: span 2; grid-template-columns: 1fr 1fr; gap: 24px; align-items: center; }
+  .f-eq .copy { display: grid; gap: 12px; }
+  .f-eq ul { margin: 6px 0 0; padding: 0; list-style: none; display: grid; gap: 8px; font-size: 15px; }
+  .f-eq li { display: grid; grid-template-columns: 74px 1fr; gap: 12px; color: var(--muted); }
+  .f-eq li b { color: var(--ink); font-weight: 600; font-family: var(--mono); font-size: 13px; white-space: nowrap; }
+  .f-eq .bands { display: flex; align-items: end; gap: 10px; height: 180px; padding: 18px; border-radius: 16px; background: var(--graphite); }
+  .f-eq .bands div { flex: 1; border-radius: 6px 6px 3px 3px; background: linear-gradient(var(--sunset-a), var(--sunset-b)); position: relative; }
+  .f-eq .bands div::after { content: attr(data-f); position: absolute; bottom: -22px; left: 50%; transform: translateX(-50%); font-family: var(--mono); font-size: 10px; color: var(--muted); }
+  .f-eq .bands-wrap { padding-bottom: 22px; }
+  .f-small { grid-column: span 2; }
+  .f-wide { grid-column: span 3; }
+  @media (max-width: 900px) {
+    .features { grid-template-columns: 1fr 1fr; }
+    .f-eq { grid-column: span 2; grid-template-columns: 1fr; }
+    .f-small, .f-wide { grid-column: span 1; }
+  }
+  @media (max-width: 560px) { .features { grid-template-columns: 1fr; } .f-eq, .f-small, .f-wide { grid-column: span 1; } }
+
+  /* Platforms */
+  .platforms { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .platform { position: relative; overflow: hidden; }
+  .platform header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .platform .os { display: flex; align-items: center; gap: 12px; }
+  .platform .os svg { width: 30px; height: 30px; }
+  .pill { font-family: var(--mono); font-size: 12px; padding: 4px 10px; border-radius: 99px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+  .pill.preview { color: var(--beta); border-color: color-mix(in srgb, var(--beta) 40%, transparent); }
+  .platform dl { display: grid; grid-template-columns: auto 1fr; gap: 8px 18px; margin: 8px 0 4px; font-size: 15px; }
+  .platform dt { color: var(--muted); }
+  .platform dd { margin: 0; }
+  .platform .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+  @media (max-width: 800px) { .platforms { grid-template-columns: 1fr; } }
+
+  /* Speakers */
+  .speakers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .tier h3 { display: flex; align-items: center; gap: 10px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+  .tier ul { margin: 4px 0 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 8px; }
+  .tier li { font-size: 14px; padding: 6px 11px; border-radius: 10px; background: color-mix(in srgb, var(--line) 55%, transparent); }
+  .tier.verified .dot { background: var(--verified); } .tier.beta .dot { background: var(--beta); } .tier.experimental .dot { background: var(--experimental); }
+  .tier.verified li { background: color-mix(in srgb, var(--verified) 14%, transparent); }
+  @media (max-width: 900px) { .speakers { grid-template-columns: 1fr; } }
+  .callout p { flex: 1 1 420px; }
+  .callout { margin-top: 22px; display: flex; gap: 16px; align-items: center; justify-content: space-between; flex-wrap: wrap;
+             padding: 22px 26px; border-radius: 20px; border: 1px dashed color-mix(in srgb, var(--accent) 45%, var(--line)); }
+
+  /* Install */
+  .install { display: grid; grid-template-columns: 1.1fr 1fr; gap: 40px; align-items: center; }
+  .steps { counter-reset: s; display: grid; gap: 18px; margin: 0; padding: 0; list-style: none; }
+  .steps li { counter-increment: s; display: grid; grid-template-columns: 40px 1fr; gap: 14px; }
+  .steps li::before { content: counter(s); width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; font-family: var(--mono);
+                      font-weight: 500; color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--line)); }
+  .steps p { color: var(--muted); font-size: 16px; }
+  .steps b { color: var(--ink); }
+  .install figure { margin: 0; }
+  .install figcaption { font-size: 14px; color: var(--muted); margin-top: 10px; text-align: center; }
+  code { font-family: var(--mono); font-size: 0.86em; padding: 2px 6px; border-radius: 6px; background: color-mix(in srgb, var(--line) 60%, transparent); overflow-wrap: anywhere; }
+  @media (max-width: 900px) { .install { grid-template-columns: 1fr; } }
+
+  /* FAQ */
+  .faq { display: grid; gap: 12px; max-width: 820px; }
+  details { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 18px 22px; }
+  summary { cursor: pointer; font-weight: 600; font-family: var(--display); font-size: 18px; list-style: none; display: flex; justify-content: space-between; gap: 16px; }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: "+"; color: var(--accent); font-family: var(--mono); }
+  details[open] summary::after { content: "–"; }
+  details p { color: var(--muted); margin-top: 10px; }
+  summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 4px; border-radius: 6px; }
+
+  /* Closing band + footer */
+  .band { border-radius: 32px; padding: 56px 40px; text-align: center; display: grid; gap: 20px; justify-items: center; color: #fff;
+          background: linear-gradient(120deg, var(--sunset-a), var(--sunset-b)); }
+  .band h2 { color: #fff; }
+  .band p { opacity: .9; max-width: 54ch; }
+  .band .btn-ghost { background: rgba(255,255,255,.16); border-color: rgba(255,255,255,.35); color: #fff; }
+  .band .btn-light { background: #fff; color: #B5321A; }
+  footer { padding-block: 40px 56px; color: var(--muted); font-size: 14px; }
+  footer .wrap { display: flex; flex-wrap: wrap; gap: 12px 28px; justify-content: space-between; }
+  footer a { color: var(--muted); }
+</style>
+</head>
+<body>
+
+<nav class="nav" aria-label="Main">
+  <div class="wrap">
+    <a class="brand" href="#top"><img src="images/icon.png" alt="" width="32" height="32">JBLControl</a>
+    <div class="nav-links">
+      <a href="#features" class="optional">Features</a>
+      <a href="#speakers" class="optional">Speakers</a>
+      <a href="#install">Install</a>
+      <a href="https://github.com/ffrafat/JBLControl">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<main id="top">
+  <!-- Hero -->
+  <header class="hero">
+    <div class="wrap hero-grid">
+      <div class="hero-copy">
+        <p class="eyebrow">Free · Open source · Mac &amp; Windows</p>
+        <h1>JBL speaker control, <span class="warm">right in your menu bar.</span></h1>
+        <p class="lede">Battery, JBL's EQ presets and a 7-band custom equalizer for Flip, Charge, Xtreme, Go, Clip and more — from your Mac's menu bar or the Windows tray. No phone, no JBL app, no account.</p>
+        <div class="cta-row">
+          <a class="btn btn-primary" id="primary-download" href="https://github.com/ffrafat/JBLControl/releases/latest">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19h14"/></svg>
+            <span id="primary-label">Download</span>
+          </a>
+          <a class="btn btn-ghost" id="secondary-download" href="https://github.com/ffrafat/JBLControl/releases/latest">All downloads</a>
+        </div>
+        <div class="meta-row">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span id="version">Latest release</span></span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>macOS 14+ · Windows 10 &amp; 11</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>MIT licensed</span>
+        </div>
+      </div>
+
+      <div class="stage" aria-hidden="false">
+        <div class="scale" aria-hidden="true"><span>+10 dB</span><span>+5</span><span>0</span><span>−5</span><span>−10 dB</span></div>
+        <svg class="curve" viewBox="0 0 1000 220" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M0 150 C 90 150, 130 60, 210 70 S 330 160, 420 130 S 560 30, 640 50 S 780 170, 860 140 S 960 110, 1000 120"
+                fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"/>
+        </svg>
+        <span class="tag">7 bands · 125 Hz – 8 kHz</span>
+        <img src="images/mac-panel.png" width="864" height="1132"
+             alt="JBLControl's panel on a Mac: a JBL Flip 7, connected, with presets Signature, Chill, Energetic, Vocal and Custom, and the custom 7-band equalizer with its response curve">
+      </div>
+    </div>
+  </header>
+
+  <!-- Features -->
+  <section id="features">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">Features</p>
+        <h2>Everything the JBL app does on your phone, on your computer.</h2>
+      </div>
+      <div class="features">
+        <article class="card f-eq">
+          <div class="copy">
+            <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 4v16M12 4v16M18 4v16"/><circle cx="6" cy="14" r="2.4" fill="currentColor"/><circle cx="12" cy="8" r="2.4" fill="currentColor"/><circle cx="18" cy="12" r="2.4" fill="currentColor"/></svg></div>
+            <h3>Presets and a real equalizer</h3>
+            <p>Switch between JBL's own Signature, Chill, Energetic and Vocal tunings, or shape your own sound with Custom and watch the response curve follow your sliders.</p>
+            <ul>
+              <li><b>7 bands</b><span>125 Hz to 8 kHz on Flip 7 and Charge 6</span></li>
+              <li><b>±6 dB</b><span>per band, with the bass going down to −9 dB</span></li>
+              <li><b>3 bands</b><span>bass, mid and treble on Charge 5 and similar</span></li>
+            </ul>
+          </div>
+          <div class="bands-wrap" aria-hidden="true">
+            <div class="bands">
+              <div data-f="125" style="height:72%"></div><div data-f="250" style="height:60%"></div><div data-f="500" style="height:48%"></div>
+              <div data-f="1k" style="height:38%"></div><div data-f="2k" style="height:52%"></div><div data-f="4k" style="height:64%"></div><div data-f="8k" style="height:78%"></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="card f-small">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="7" width="17" height="10" rx="2.5"/><path d="M22 11v2"/><path d="m11 9-2 3h3l-2 3"/></svg></div>
+          <h3>Battery at a glance</h3>
+          <p>Percentage right in the menu bar or tray, green while charging, plus a heads-up when it drops to 20%.</p>
+        </article>
+
+        <article class="card f-small">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><path d="M6 2v2M10 2v2M14 2v2"/></svg></div>
+          <h3>Keep Awake</h3>
+          <p>JBL speakers switch off after 10–20 silent minutes. Keep Awake stops that while your computer is playing to it.</p>
+        </article>
+
+        <article class="card f-wide">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="8" height="14" rx="2"/><rect x="13" y="5" width="8" height="14" rx="2"/><circle cx="7" cy="13" r="2"/><circle cx="17" cy="13" r="2"/></svg></div>
+          <h3>Several speakers? One click.</h3>
+          <p>Every JBL nearby shows up as a chip; pick one to switch. JBLControl remembers yours and reconnects by itself, even though JBL speakers change their Bluetooth address every few minutes.</p>
+        </article>
+
+        <article class="card f-wide">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4 6v6c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V6Z"/><path d="m9 12 2 2 4-4"/></svg></div>
+          <h3>No account. No tracking. Open source.</h3>
+          <p>It talks to your speaker over Bluetooth and only goes online to check for updates and fetch speaker photos. Every line is on GitHub under the MIT license.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- Platforms -->
+  <section id="platforms">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">Mac &amp; Windows</p>
+        <h2>Native on both.</h2>
+        <p class="lede">Not a web wrapper: an AppKit and SwiftUI menu bar app on the Mac, a WinUI 3 tray app on Windows, both built on the same protocol research and test cases.</p>
+      </div>
+      <div class="platforms">
+        <article class="card platform">
+          <header>
+            <div class="os">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.4 12.6c0-2.4 2-3.5 2-3.6-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.1-2.8.9-3.5.9s-1.8-.9-3-.8C7 7.3 5.6 8.2 4.8 9.6c-1.6 2.8-.4 7 1.2 9.3.8 1.1 1.7 2.4 2.9 2.3 1.2 0 1.6-.7 3-.7s1.8.7 3 .7c1.3 0 2.1-1.1 2.8-2.3.9-1.3 1.3-2.6 1.3-2.6-.1 0-2.6-1-2.6-3.7ZM14.2 5.6c.6-.8 1-1.8.9-2.9-.9 0-2 .6-2.7 1.4-.6.7-1.1 1.8-1 2.8 1 .1 2.1-.5 2.8-1.3Z"/></svg>
+              <h3>Mac</h3>
+            </div>
+            <span class="pill">menu bar app</span>
+          </header>
+          <dl>
+            <dt>Requires</dt><dd>macOS 14 Sonoma or later</dd>
+            <dt>Runs on</dt><dd>Apple Silicon and Intel</dd>
+            <dt>Looks</dt><dd>Liquid Glass on macOS 26 Tahoe, classic translucency on Sonoma and Sequoia</dd>
+            <dt>Install</dt><dd>DMG: drag to Applications</dd>
+          </dl>
+          <div class="actions">
+            <a class="btn btn-ghost" data-asset="mac" href="https://github.com/ffrafat/JBLControl/releases/latest">Download for Mac</a>
+          </div>
+        </article>
+
+        <article class="card platform">
+          <header>
+            <div class="os">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 5.4 10.4 4.4v7.1H3Zm0 13.2 7.4 1v-7H3Zm8.3 1.1L21 21v-8.4h-9.7Zm0-15.4v7.2H21V3Z"/></svg>
+              <h3>Windows</h3>
+            </div>
+            <span class="pill preview">preview</span>
+          </header>
+          <dl>
+            <dt>Requires</dt><dd>Windows 10 (1809) or Windows 11</dd>
+            <dt>Runs on</dt><dd>x64 and Arm64 (Snapdragon)</dd>
+            <dt>Looks</dt><dd>Fluent design with Mica, a tray icon and a main window</dd>
+            <dt>Install</dt><dd>Installer (no admin needed) or portable zip</dd>
+          </dl>
+          <div class="actions">
+            <a class="btn btn-ghost" data-asset="win-x64" href="https://github.com/ffrafat/JBLControl/releases/latest">Windows x64</a>
+            <a class="btn btn-ghost" data-asset="win-arm64" href="https://github.com/ffrafat/JBLControl/releases/latest">Windows Arm64</a>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- Speakers -->
+  <section id="speakers">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">Supported speakers</p>
+        <h2>37 JBL models in the catalog.</h2>
+        <p class="lede">Verified models are confirmed byte for byte on real hardware. Beta and experimental ones read battery and info safely; their EQ changes stay behind an opt-in until an owner confirms them.</p>
+      </div>
+      <div class="speakers">
+        <article class="card tier verified">
+          <h3><span class="dot"></span>Verified</h3>
+          <ul><li>Flip 7</li><li>Charge 6</li><li>Charge 5</li></ul>
+        </article>
+        <article class="card tier beta">
+          <h3><span class="dot"></span>Beta</h3>
+          <ul><li>Xtreme 3</li><li>Xtreme 4</li><li>Go 4</li><li>Go 4 Duo</li><li>Clip 5</li><li>Tuner 3</li></ul>
+        </article>
+        <article class="card tier experimental">
+          <h3><span class="dot"></span>Experimental</h3>
+          <ul><li>Go 5</li><li>Grip</li><li>Xtreme 5</li><li>Boombox 2 / 3 / 4</li><li>Flip 6</li><li>Pulse 5</li><li>Essential 3 SE</li><li>older models</li></ul>
+        </article>
+      </div>
+      <div class="callout">
+        <p><b>Own one that isn't verified yet?</b> In JBLControl, choose ••• → Copy Diagnostics and paste it into a device report. That's usually all it takes.</p>
+        <a class="btn btn-ghost" href="https://github.com/ffrafat/JBLControl/issues/new?template=device-report.yml">Send a device report</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Install -->
+  <section id="install">
+    <div class="wrap install">
+      <div style="display:grid; gap:28px; min-width:0">
+        <div class="section-head" style="margin:0">
+          <p class="eyebrow">Install</p>
+          <h2>Up and running in a minute.</h2>
+        </div>
+        <ol class="steps">
+          <li><div><b>Download</b><p>The DMG for Mac, or the installer for Windows (x64, or Arm64 for Snapdragon PCs).</p></div></li>
+          <li><div><b>Install</b><p>Mac: drag JBLControl onto Applications. Windows: run the installer; it doesn't need administrator rights.</p></div></li>
+          <li><div><b>Allow it the first time</b><p>JBLControl is free and not yet notarized by Apple or signed for Microsoft, so your system warns once. On Mac: <b>System Settings → Privacy &amp; Security → Open Anyway</b>. On Windows: <b>More info → Run anyway</b>. <a href="https://github.com/ffrafat/JBLControl#if-macos-blocks-jblcontrol">Why this happens and why it's safe</a>.</p></div></li>
+          <li><div><b>Turn your speaker on</b><p>JBLControl finds it by itself. If JBL Portable is open on your phone, close it; the speaker takes one control connection at a time.</p></div></li>
+        </ol>
+      </div>
+      <figure>
+        <img src="images/mac-install.png" width="1000" height="737" loading="lazy" alt="The JBLControl installer window on a Mac: drag the app onto the Applications folder, with a tip for the first launch">
+        <figcaption>The Mac installer tells you what to do on first launch.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">FAQ</p>
+        <h2>Good questions.</h2>
+      </div>
+      <div class="faq">
+        <details><summary>Is this an official JBL app?</summary>
+          <p>No. JBLControl is an independent, open-source project, not affiliated with or endorsed by JBL or Harman. It speaks the same Bluetooth protocol as JBL's own app, building on community research by openjbl.</p></details>
+        <details><summary>Why does my Mac or PC warn me about it?</summary>
+          <p>Apple and Microsoft only let apps open without a warning if the developer pays for notarization or code signing. JBLControl is a free hobby project, so it isn't (yet). The warning means the system hasn't checked this build, not that it found anything wrong. All the code is public, and each release lists SHA-256 checksums so you can confirm your download.</p></details>
+        <details><summary>Do I still need the JBL Portable app?</summary>
+          <p>Only for firmware updates, PartyBoost and Auracast, which JBLControl doesn't do. Your EQ settings are stored on the speaker, so they apply wherever you play from.</p></details>
+        <details><summary>Does Keep Awake drain the battery?</summary>
+          <p>Yes, a little: the speaker stays on instead of switching itself off. It only works while your computer is the speaker's sound output, and the icon turns orange while it's on so you don't forget it.</p></details>
+        <details><summary>My speaker isn't listed as verified. Will it work?</summary>
+          <p>Probably for battery and info. For EQ on beta and experimental models, turn on "Allow experimental EQ" in Settings, and please send a device report so it can be verified for everyone.</p></details>
+      </div>
+    </div>
+  </section>
+
+  <!-- Closing band -->
+  <section style="padding-top:0">
+    <div class="wrap">
+      <div class="band">
+        <h2>Give your JBL a proper remote.</h2>
+        <p>Free and open source. If it's useful to you, a star on GitHub helps other JBL owners find it.</p>
+        <div class="cta-row" style="justify-content:center">
+          <a class="btn btn-light" data-asset="auto" href="https://github.com/ffrafat/JBLControl/releases/latest">Download</a>
+          <a class="btn btn-ghost" href="https://github.com/ffrafat/JBLControl">★ Star on GitHub</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>JBLControl is unofficial and not affiliated with or endorsed by JBL or Harman International. JBL is a trademark of Harman International Industries, Incorporated.</p>
+    <p><a href="https://github.com/ffrafat/JBLControl">GitHub</a> · <a href="https://github.com/ffrafat/JBLControl/releases">Releases</a> · <a href="https://github.com/ffrafat/JBLControl/blob/main/LICENSE">MIT License</a></p>
+  </div>
+</footer>
+
+<script>
+  // Point the download buttons at the latest release's actual files, and pick the right one for this
+  // visitor's platform. Without JavaScript (or if GitHub's API is unreachable) they link to the release page.
+  (async () => {
+    const ua = navigator.userAgent;
+    let platform = /Windows/i.test(ua) ? "win-x64" : /Mac/i.test(ua) ? "mac" : null;
+    try {
+      const hints = await navigator.userAgentData?.getHighEntropyValues?.(["architecture"]);
+      if (platform === "win-x64" && hints?.architecture === "arm") platform = "win-arm64";
+    } catch {}
+
+    const labels = { "mac": "Download for Mac", "win-x64": "Download for Windows", "win-arm64": "Download for Windows (Arm)" };
+    const primaryLabel = document.getElementById("primary-label");
+    if (platform) primaryLabel.textContent = labels[platform];
+
+    let release;
+    try {
+      const res = await fetch("https://api.github.com/repos/ffrafat/JBLControl/releases/latest");
+      if (!res.ok) return;
+      release = await res.json();
+    } catch { return; }
+
+    const find = (test) => release.assets?.find((a) => test(a.name))?.browser_download_url;
+    const urls = {
+      "mac": find((n) => n.endsWith(".dmg")),
+      "win-x64": find((n) => /win-x64-.*-setup\.exe$/.test(n)),
+      "win-arm64": find((n) => /win-arm64-.*-setup\.exe$/.test(n)),
+    };
+    document.querySelectorAll("[data-asset]").forEach((a) => {
+      const key = a.dataset.asset === "auto" ? platform : a.dataset.asset;
+      if (key && urls[key]) a.href = urls[key];
+    });
+    if (platform && urls[platform]) document.getElementById("primary-download").href = urls[platform];
+    document.getElementById("secondary-download").href = release.html_url;
+    document.getElementById("version").textContent = `Version ${release.tag_name.replace(/^v/, "")}`;
+  })();
+</script>
+</body>
+</html>
