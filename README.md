@@ -37,8 +37,8 @@ more, in a native macOS menu bar panel (Liquid Glass on Tahoe). No phone, no JBL
 
 | Status | Models |
 |---|---|
-| ✅ Verified | Flip 7, Charge 6 |
-| 🟠 Beta | Charge 5, Xtreme 3, Xtreme 4, Go 4, Go 4 Duo, Clip 5, Tuner 3 |
+| ✅ Verified | Flip 7, Charge 6, Charge 5 |
+| 🟠 Beta | Xtreme 3, Xtreme 4, Go 4, Go 4 Duo, Clip 5, Tuner 3 |
 | 🟣 Experimental | Go 5, Grip, Xtreme 5, Boombox 2/3/4, Flip 6, Pulse 5, Flip/Charge Essential 3 SE, older models |
 
 Full list with product IDs: [docs/SUPPORTED_MODELS.md](docs/SUPPORTED_MODELS.md).

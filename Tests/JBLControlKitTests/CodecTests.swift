@@ -9,7 +9,7 @@ import Testing
         (0x2107, .legacyParametric, .verified),     // Flip 7
         (0x20E3, .legacyParametric, .verified),     // Charge 6
         (0x20DC, .legacyLevels, .beta),             // Xtreme 4
-        (0x2040, .legacySimple, .beta),             // Charge 5
+        (0x2040, .legacySimple, .verified),         // Charge 5 (issue #1)
         (0x214E, .protocol4Parametric, .experimental), // Boombox 4
         (0x2168, .protocol4Quantized, .experimental),  // Go 5
         (0x0023, .infoOnly, .unsupported),          // Flip 3 (SPP)
@@ -138,4 +138,42 @@ import Testing
     #expect(!SpeakerIdentity.matches(name: "FFR JBL Flip 7", productID: 0x2107, name: "Kitchen", productID: 0x2107))
     #expect(!SpeakerIdentity.matches(name: "JBL Flip 7", productID: 0x2107, name: "JBL Flip 7", productID: 0x20E3))
     #expect(!SpeakerIdentity.matches(name: "", productID: 0x2107, name: "JBL Flip 7", productID: 0x2107))
+}
+
+// MARK: Charge 5, captured by @shortrockerz (issue #1): firmware 0.8.9.0, macOS 15.7.9
+
+@Test func charge5InfoParses() {
+    var d = FrameDecoder()
+    let frames = d.feed(bytes("""
+    AA 12 0F 00 C1 0C 4A 42 4C 20 43 68 61 72 67 65 20 35 AA 12 04 00 42 20 40 \
+    AA 12 03 00 44 94 AA 42 04 00 08 09 00
+    """))
+    #expect(frames.prefix(3).compactMap { InfoToken.parse($0.payload) } == [
+        .name("JBL Charge 5"), .productID(0x2040), .battery(level: 20, charging: true),
+    ])
+    #expect(frames.last.map { FirmwareVersion.format($0.payload) } == "0.8.9.0")
+}
+
+@Test func charge5EQReplySplitAcrossNotifications() throws {
+    let model = try #require(Catalog.model(0x2040))
+    let codec = EQCodec(model: model)
+    var d = MessageDecoder()
+    // The 18-byte 0x6D reply arrived as two notifications.
+    #expect(d.feed(bytes("AA 6D 12 02 01 01 03 01 00 02 00")).isEmpty)
+    let reply = try #require(d.feed(bytes("03 00 C1 03 01 00 02 00 03 00")).first)
+    // Before the write: category 01 active; custom C1 at 0/0/0.
+    #expect(codec.parse(reply) == EQSnapshot(activeCategory: 0x01, gains: [0, 0, 0]))
+
+    #expect(d.feed(bytes("AA 6D 12 02 C1 01 03 01 00 02 00")).isEmpty)
+    let after = try #require(d.feed(bytes("03 00 C1 03 01 00 02 00 03 00")).first)
+    #expect(codec.parse(after) == EQSnapshot(activeCategory: 0xC1, gains: [0, 0, 0]))
+}
+
+@Test func charge5CustomWriteMatchesCaptureAndIsAcknowledged() throws {
+    let model = try #require(Catalog.model(0x2040))
+    #expect(!model.writesNeedOptIn)
+    #expect(EQCodec(model: model).setCustom([0, 0, 0]) == [bytes("AA 6E 08 C1 03 01 00 02 00 03 00")])
+    var d = FrameDecoder()
+    // DEV_ACK for 0x6E with status 00 (success).
+    #expect(d.feed(bytes("AA 00 02 6E 00")) == [Frame(0x00, [0x6E, 0x00])])
 }

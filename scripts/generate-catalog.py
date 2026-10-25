@@ -26,7 +26,7 @@ FAMILY_EQ = {
 SUPPORT_LABEL = {"verified": "✅ Verified", "beta": "🟠 Beta", "experimental": "🟣 Experimental", "unsupported": "⛔ Unsupported"}
 
 # Models whose wire format has been confirmed byte for byte on real hardware.
-VERIFIED = {"2107", "20e3"}  # Flip 7 (this project), Charge 6 (openjbl)
+VERIFIED = {"2107", "20e3", "2040"}  # Flip 7 (this project), Charge 6 (openjbl), Charge 5 (issue #1)
 # Protocol 4 models that take quantized 0E7F EQ instead of 0E02 parametric.
 QUANTIZED_P4 = {"2132", "2168", "2185", "218a"}
 
