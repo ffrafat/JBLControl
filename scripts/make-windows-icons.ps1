@@ -38,8 +38,11 @@ function Render([string]$html, [int]$w, [int]$h, [string]$png) {
     Set-Content -Path $page -Value $html -Encoding UTF8
     $shot = "$png.full.png"
     $uri = ([Uri]$page).AbsoluteUri
+    # At least 800x800 (headless windows have a minimum size), but big enough for larger renders
+    # (e.g. 2160x2160 Store box art) to fit without cropping into empty space.
+    $winW = [Math]::Max($w, 800); $winH = [Math]::Max($h, 800)
     $edgeArgs = @('--headless=new', '--disable-gpu', '--hide-scrollbars', '--force-device-scale-factor=1',
-        '--default-background-color=00000000', "`"--user-data-dir=$userData`"", '--window-size=800,800', "`"--screenshot=$shot`"", $uri)
+        '--default-background-color=00000000', "`"--user-data-dir=$userData`"", "--window-size=$winW,$winH", "`"--screenshot=$shot`"", $uri)
     $p = Start-Process -FilePath $edge -ArgumentList $edgeArgs -Wait -PassThru -WindowStyle Hidden
     if (-not (Test-Path $shot)) { throw "Edge didn't render $png (exit $($p.ExitCode))" }
     $full = [Drawing.Bitmap]::FromFile($shot)
@@ -108,6 +111,37 @@ foreach ($logo in @(@{ n = 'Square44x44Logo'; s = 44 }, @{ n = 'Square150x150Log
     Render ($page -replace '\{0\}', ($iconSvg -replace '\{0\}', $logo.s)) $logo.s $logo.s $png
     Copy-Item $png (Join-Path $storeDir "$($logo.n).png") -Force
 }
+
+# Partner Center's optional listing art: 1:1 Box art is just the app icon at full size; 9:16 Poster art
+# is a taller branded composition (same treatment as the installer banner below) for the Store's main
+# tile on Windows 10/11. Both rendered at their 2x size for a sharp Store listing.
+$boxPng = Join-Path $work 'box-2160.png'
+Render ($page -replace '\{0\}', ($iconSvg -replace '\{0\}', 2160)) 2160 2160 $boxPng
+Copy-Item $boxPng (Join-Path $storeDir 'BoxArt.png') -Force
+
+$posterSvg = @"
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 1080" width="1440" height="2160">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FF9429"/><stop offset="1" stop-color="#E62E33"/></linearGradient>
+    <radialGradient id="glow" cx="25%" cy="12%" r="65%"><stop offset="0" stop-color="#fff" stop-opacity="0.28"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+    <linearGradient id="sheen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0.22"/><stop offset="0.55" stop-color="#FFFFFF" stop-opacity="0"/></linearGradient>
+    <filter id="s1" x="-20%" y="-20%" width="140%" height="160%"><feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#000" flood-opacity="0.5"/></filter>
+    <filter id="s2" x="-20%" y="-20%" width="140%" height="160%"><feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#000" flood-opacity="0.4"/></filter>
+  </defs>
+  <rect width="720" height="1080" fill="url(#bg)"/>
+  <rect width="720" height="1080" fill="url(#glow)"/>
+  <g transform="translate(100, 150) scale(0.508)">
+    <g filter="url(#s1)">$body</g>
+    <g style="mix-blend-mode:screen">$($body -replace '#4A4A50', 'url(#sheen)')</g>
+    <g filter="url(#s2)">$controls</g>
+  </g>
+  <text x="360" y="840" text-anchor="middle" font-family="'Segoe UI Variable Display','Segoe UI',sans-serif"
+        font-size="58" font-weight="700" fill="#fff" style="letter-spacing:.2px">JBLControl</text>
+</svg>
+"@
+$posterPng = Join-Path $work 'poster-1440.png'
+Render ($page -replace '\{0\}', $posterSvg) 1440 2160 $posterPng
+Copy-Item $posterPng (Join-Path $storeDir 'PosterArt.png') -Force
 Write-Host "wrote $storeDir\*.png"
 
 # --- Tray icon -------------------------------------------------------------------------------------
