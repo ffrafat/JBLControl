@@ -10,3 +10,4 @@ windows/**/bin/
 windows/**/obj/
 windows/build/
 windows/.vs/
+windows/JBLControl.Windows/AppPackages/
