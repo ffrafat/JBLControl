@@ -145,6 +145,30 @@ $posterSvg = @"
 $posterPng = Join-Path $work 'poster-1440.png'
 Render ($page -replace '\{0\}', $posterSvg) 1440 2160 $posterPng
 Copy-Item $posterPng (Join-Path $storeDir 'PosterArt.png') -Force
+
+# 16:9 Super hero art: shown at the top of the Store listing. Store policy requires no product title/text
+# in this one (unlike Poster art's wordmark), so it's just the icon artwork on the gradient, full bleed.
+$heroSvg = @"
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="3840" height="2160">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FF9429"/><stop offset="1" stop-color="#E62E33"/></linearGradient>
+    <radialGradient id="glow" cx="22%" cy="20%" r="60%"><stop offset="0" stop-color="#fff" stop-opacity="0.26"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+    <linearGradient id="sheen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0.22"/><stop offset="0.55" stop-color="#FFFFFF" stop-opacity="0"/></linearGradient>
+    <filter id="s1" x="-20%" y="-20%" width="140%" height="160%"><feDropShadow dx="0" dy="22" stdDeviation="26" flood-color="#000" flood-opacity="0.5"/></filter>
+    <filter id="s2" x="-20%" y="-20%" width="140%" height="160%"><feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#000" flood-opacity="0.4"/></filter>
+  </defs>
+  <rect width="1920" height="1080" fill="url(#bg)"/>
+  <rect width="1920" height="1080" fill="url(#glow)"/>
+  <g transform="translate(650, 230) scale(0.605)">
+    <g filter="url(#s1)">$body</g>
+    <g style="mix-blend-mode:screen">$($body -replace '#4A4A50', 'url(#sheen)')</g>
+    <g filter="url(#s2)">$controls</g>
+  </g>
+</svg>
+"@
+$heroPng = Join-Path $work 'hero-3840.png'
+Render ($page -replace '\{0\}', $heroSvg) 3840 2160 $heroPng
+Copy-Item $heroPng (Join-Path $storeDir 'SuperHeroArt.png') -Force
 Write-Host "wrote $storeDir\*.png"
 
 # --- Tray icon -------------------------------------------------------------------------------------
