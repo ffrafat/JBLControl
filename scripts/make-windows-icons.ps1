@@ -106,11 +106,14 @@ Write-Host "wrote $ico"
 # Package.appxmanifest's required sizes: the app-list/taskbar tile, the Start tile, and the Store listing logo.
 $storeDir = Join-Path $appDir 'Assets/Store'
 New-Item -ItemType Directory -Force $storeDir | Out-Null
-foreach ($logo in @(@{ n = 'Square44x44Logo'; s = 44 }, @{ n = 'Square150x150Logo'; s = 150 }, @{ n = 'StoreLogo'; s = 50 })) {
+foreach ($logo in @(@{ n = 'Square44x44Logo'; s = 44 }, @{ n = 'Square150x150Logo'; s = 150 }, @{ n = 'StoreLogo'; s = 50 },
+                     @{ n = 'StoreDisplay-300'; s = 300 }, @{ n = 'StoreDisplay-71'; s = 71 })) {
     $png = Join-Path $work "store-$($logo.s).png"
     Render ($page -replace '\{0\}', ($iconSvg -replace '\{0\}', $logo.s)) $logo.s $logo.s $png
     Copy-Item $png (Join-Path $storeDir "$($logo.n).png") -Force
 }
+# Partner Center's "Store display images" 150x150 slot: same art, already at that exact size.
+Copy-Item (Join-Path $storeDir 'Square150x150Logo.png') (Join-Path $storeDir 'StoreDisplay-150.png') -Force
 
 # Partner Center's optional listing art: 1:1 Box art is just the app icon at full size; 9:16 Poster art
 # is a taller branded composition (same treatment as the installer banner below) for the Store's main
