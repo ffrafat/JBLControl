@@ -1,0 +1,58 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Microsoft Store package identity and manifest. Built only when packaging for the Store
+  (dotnet publish -p:WindowsPackageType=MSIX); the plain unpackaged build (app.manifest) used for the
+  direct-download installer/zip is unaffected. See windows/PORT_PLAN.md for the Store submission notes.
+
+  Identity values are this app's actual Partner Center reservation (FaisalFRafat.JBLControl) - do not
+  change Name/Publisher without re-reserving, or the Store will treat it as a different app.
+
+  Version's 4th segment is reserved by the Store and must stay 0; scripts/build-windows.ps1's -Msix
+  flag rewrites the first three segments from Resources/Info.plist before packaging.
+-->
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  IgnorableNamespaces="uap rescap">
+
+  <Identity
+    Name="FaisalFRafat.JBLControl"
+    Publisher="CN=4858B90F-B025-495F-9206-5CF53DF31D9E"
+    Version="0.8.0.0" />
+
+  <Properties>
+    <DisplayName>JBLControl</DisplayName>
+    <PublisherDisplayName>Faisal F Rafat</PublisherDisplayName>
+    <Logo>Assets\Store\StoreLogo.png</Logo>
+  </Properties>
+
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.19041.0" />
+  </Dependencies>
+
+  <Resources>
+    <Resource Language="x-generate" />
+  </Resources>
+
+  <Applications>
+    <Application Id="App" Executable="$targetnametoken$.exe" EntryPoint="$targetentrypoint$">
+      <uap:VisualElements
+        DisplayName="JBLControl"
+        Description="JBL speaker control, right in your system tray."
+        BackgroundColor="transparent"
+        Square150x150Logo="Assets\Store\Square150x150Logo.png"
+        Square44x44Logo="Assets\Store\Square44x44Logo.png" />
+    </Application>
+  </Applications>
+
+  <Capabilities>
+    <!-- The Windows App SDK's packaged-but-full-trust (classic Win32) execution model. -->
+    <rescap:Capability Name="runFullTrust" />
+    <!-- Checking for updates (GitHub) and fetching speaker photos (jbl.com). -->
+    <Capability Name="internetClient" />
+    <!-- Connecting to the speaker's BLE GATT service; required for Windows.Devices.Bluetooth
+         from inside the packaged app's sandbox (not needed by the unpackaged build). -->
+    <DeviceCapability Name="bluetooth" />
+  </Capabilities>
+</Package>

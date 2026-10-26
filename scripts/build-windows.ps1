@@ -7,10 +7,14 @@
     else needs installing) for each architecture: .NET has no fat binary, so x64 and arm64 are separate
     builds, as plan section 10 describes. Unsigned, like the Mac release zips.
 
-    Usage: scripts/build-windows.ps1 [-Arch x64,arm64] [-Installer] [-Zip] [-Install] [-Run]
+    Usage: scripts/build-windows.ps1 [-Arch x64,arm64] [-Installer] [-Zip] [-Msix] [-Install] [-Run]
       -Installer  build/JBLControl-win-<arch>-<version>-setup.exe per architecture (needs Inno Setup 6:
                   winget install JRSoftware.InnoSetup); the release download
       -Zip        build/JBLControl-win-<arch>-<version>.zip per architecture (portable, no installer)
+      -Msix       build/JBLControl-win-<arch>-<version>.msixupload per architecture, for Partner Center
+                  (Microsoft Store submission). A separate, packaged (sandboxed) build from -Installer/-Zip:
+                  see Package.appxmanifest and windows/PORT_PLAN.md's Store-publishing notes. Partner Center
+                  accepts one .msixupload per architecture in a submission; they don't need to be bundled.
       -Install    copy this PC's architecture to %LOCALAPPDATA%\Programs\JBLControl, with a Start menu shortcut
       -Run        restart the app (the installed copy with -Install, otherwise the fresh build)
     -Installer and -Zip also write build/JBLControl-win-<version>.sha256 with every file's SHA-256.
@@ -19,6 +23,7 @@ param(
     [ValidateSet('x64', 'arm64')] [string[]] $Arch = @('x64', 'arm64'),
     [switch] $Installer,
     [switch] $Zip,
+    [switch] $Msix,
     [switch] $Install,
     [switch] $Run
 )
@@ -63,6 +68,35 @@ foreach ($a in $Arch) {
 }
 
 $artifacts = @()
+
+if ($Msix) {
+    # The Store's Identity Version: the 4th segment is reserved by the Store and must stay 0
+    # (see Package.appxmanifest's own comment on this).
+    $manifestPath = 'windows/JBLControl.Windows/Package.appxmanifest'
+    $manifest = Get-Content -Raw $manifestPath
+    # Anchored so it only touches Identity's Version="…" and not Dependencies' MinVersion/MaxVersionTested.
+    $manifest = [regex]::Replace($manifest, '(?<![A-Za-z])Version="\d+\.\d+\.\d+\.\d+"', "Version=`"$version.0`"")
+    Set-Content -Path $manifestPath -Value $manifest -Encoding UTF8 -NoNewline
+
+    foreach ($a in $Arch) {
+        $msbuildPlatform = if ($a -eq 'arm64') { 'ARM64' } else { 'x64' }
+        $packagesDir = 'windows/JBLControl.Windows/AppPackages'
+        if (Test-Path $packagesDir) { Remove-Item -Recurse -Force $packagesDir }
+        # -AppxSymbolPackageEnabled:false sidesteps a WinAppSDK MSIX-tooling bug under dotnet's
+        # cross-platform MSBuild (mspdbcmf.exe/System.Security.Permissions missing); the app package
+        # itself doesn't need the separate .appxsym debug-symbols package to be valid for submission.
+        dotnet publish $project -c Release -r "win-$a" --self-contained true -p:Platform=$msbuildPlatform `
+            -p:WindowsPackageType=MSIX -p:AppxPackageSigningEnabled=false -p:AppxSymbolPackageEnabled=false `
+            -p:GenerateAppxPackageOnBuild=true -p:UapAppxPackageBuildMode=StoreUpload -nologo
+        if ($LASTEXITCODE -ne 0) { throw "MSIX publish failed for $a" }
+        $upload = Get-ChildItem (Join-Path $root "$packagesDir/*.msixupload") | Select-Object -First 1
+        if (-not $upload) { throw "No .msixupload produced for $a" }
+        $dest = Join-Path $root "build/JBLControl-win-$a-$version.msixupload"
+        Copy-Item $upload $dest -Force
+        $artifacts += $dest
+        Write-Host "Built $dest"
+    }
+}
 
 if ($Installer) {
     foreach ($a in $Arch) {

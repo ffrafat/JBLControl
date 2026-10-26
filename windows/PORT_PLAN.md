@@ -98,6 +98,49 @@ so it has to be off on a dev machine — and end users with it on can't run the
 unsigned release either (README explains). Signing (e.g. Azure Trusted Signing)
 is the fix for both.
 
+### Microsoft Store submission (MSIX)
+
+App reserved in Partner Center as **MSIX or PWA app** (not "EXE or MSI app" —
+that path needs the developer's own Trusted-Root-CA code-signing certificate;
+MSIX gets re-signed by the Store for free, which also sidesteps Smart App
+Control/SmartScreen for Store installs). Identity: `FaisalFRafat.JBLControl`.
+
+`windows/JBLControl.Windows/Package.appxmanifest` is a **separate, packaged**
+build from the unpackaged installer/zip (`app.manifest`); it doesn't replace
+them. `scripts/build-windows.ps1 -Msix` builds
+`build/JBLControl-win-<arch>-<version>.msixupload` per architecture — upload
+one per architecture to Partner Center's Packages page; they don't need to be
+bundled into one file. Verified on this machine for both x64 and arm64 (exit
+0, valid non-corrupt zip, `PackageSuccessfullyCreated`) — **not yet actually
+submitted/certified**, and Bluetooth-from-inside-the-MSIX-sandbox is
+**unverified on real hardware** (risk #4 still applies, now doubly so for the
+packaged build specifically).
+
+Two non-obvious things the manifest/script work around:
+- **Capabilities element order matters.** `rescap:Capability` (needed for
+  `runFullTrust`, since this is a classic-Win32-execution-model Windows App
+  SDK app, not a sandboxed UWP one) must come *before* `Capability`/
+  `DeviceCapability` siblings in `<Capabilities>`, or `MakeAppx` rejects the
+  schema. GATT client access needs `<DeviceCapability Name="bluetooth"/>`;
+  network calls (update check, jbl.com photos) need `<Capability
+  Name="internetClient"/>`.
+- **`-p:AppxSymbolPackageEnabled=false` is required** when building via
+  `dotnet publish` (not Visual Studio) on this toolchain: the WinAppSDK MSIX
+  tooling's debug-symbol-package step (`WinAppSdkCreateAppStoreContainer`)
+  fails under `dotnet`'s cross-platform MSBuild with a missing
+  `System.Security.Permissions` assembly (`mspdbcmf.exe` isn't found either).
+  The app package itself doesn't need the separate `.appxsym` to be valid —
+  disabling it sidesteps the bug entirely rather than fixing the root cause.
+- The Identity `Version` attribute's 4th segment is Store-reserved and must
+  stay `0`; `-Msix` rewrites the first three from `Resources/Info.plist`
+  using a regex anchored with `(?<![A-Za-z])` so it doesn't also corrupt
+  `Dependencies`' unrelated `MinVersion="…"` attribute (a real bug caught
+  and fixed during this work — the first, unanchored version matched both).
+
+Still ahead: Store listing content (description, screenshots, age rating,
+privacy policy URL — jbl.com/GitHub network use means one is required),
+submitting for certification, and the hardware/sandbox verification above.
+
 ## 1. Project layout
 
 New `windows/` folder, sibling to `Sources/`, `Tests/`, `docs/`, `scripts/`.

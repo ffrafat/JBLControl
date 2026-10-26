@@ -8,6 +8,7 @@
     - windows/JBLControl.Windows/TrayIcons.Generated.cs: the same icon as raw pixels at each
       notification-area size, which TrayIcon draws its Keep Awake dot over at runtime.
     - windows/Installer/Wizard*.bmp: the installer's branded banner and header images.
+    - windows/JBLControl.Windows/Assets/Store/*.png: the Microsoft Store listing's required logo sizes.
 
     Rasterizes the SVGs with headless Microsoft Edge, so it needs nothing beyond Windows itself.
     Re-run after changing the Mac icon (scripts/make-icon.py):  powershell -File scripts/make-windows-icons.ps1
@@ -97,6 +98,17 @@ foreach ($entry in $pngs) { $bw.Write($entry[1]) }
 [IO.File]::WriteAllBytes($ico, $ms.ToArray())
 Copy-Item (Join-Path $work 'icon-256.png') (Join-Path $appDir 'Assets/AppIcon.png') -Force
 Write-Host "wrote $ico"
+
+# --- Store logos -------------------------------------------------------------------------------------
+# Package.appxmanifest's required sizes: the app-list/taskbar tile, the Start tile, and the Store listing logo.
+$storeDir = Join-Path $appDir 'Assets/Store'
+New-Item -ItemType Directory -Force $storeDir | Out-Null
+foreach ($logo in @(@{ n = 'Square44x44Logo'; s = 44 }, @{ n = 'Square150x150Logo'; s = 150 }, @{ n = 'StoreLogo'; s = 50 })) {
+    $png = Join-Path $work "store-$($logo.s).png"
+    Render ($page -replace '\{0\}', ($iconSvg -replace '\{0\}', $logo.s)) $logo.s $logo.s $png
+    Copy-Item $png (Join-Path $storeDir "$($logo.n).png") -Force
+}
+Write-Host "wrote $storeDir\*.png"
 
 # --- Tray icon -------------------------------------------------------------------------------------
 # The full app icon as straight-alpha RGBA at every notification-area size, so TrayIcon can composite
