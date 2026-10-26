@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Privacy Policy — JBLControl</title>
+<meta name="description" content="JBLControl's privacy policy: it doesn't collect, store or share any personal data.">
+<meta name="theme-color" content="#F26A21">
+<link rel="icon" type="image/png" href="images/favicon.png">
+<link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Privacy Policy — JBLControl">
+<meta property="og:description" content="JBLControl's privacy policy: it doesn't collect, store or share any personal data.">
+<meta property="og:url" content="https://ffrafat.github.io/JBLControl/privacy.html">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@600;700;800;900&family=Albert+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+  :root {
+    --bg: #F7F5F3; --surface: #FFFFFF; --ink: #1D1714; --muted: #6E625B; --line: #E8E0DA;
+    --sunset-a: #FF9429; --sunset-b: #E62E33; --accent: #E9541E;
+    --display: "Schibsted Grotesk", "Avenir Next", system-ui, sans-serif;
+    --body: "Albert Sans", -apple-system, "Segoe UI", system-ui, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #131110; --surface: #1C1917; --ink: #F6EFEA; --muted: #ABA099; --line: #2F2A27; --accent: #FF7A3D; color-scheme: dark; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 17px; line-height: 1.65; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 760px; margin: 0 auto; padding-inline: 20px; }
+  a { color: var(--accent); }
+  h1, h2 { font-family: var(--display); line-height: 1.12; letter-spacing: -0.02em; }
+  h1 { font-size: clamp(32px, 5vw, 44px); font-weight: 900; margin: 0 0 8px; }
+  h2 { font-size: 22px; font-weight: 700; margin: 40px 0 10px; }
+  p, li { color: var(--ink); }
+  .updated { color: var(--muted); font-size: 15px; margin: 0 0 40px; }
+  .nav { padding-block: 20px; }
+  .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; font-family: var(--display); font-weight: 800; font-size: 19px; color: var(--ink); }
+  .brand img { width: 28px; height: 28px; }
+  main { padding-block: 24px 80px; }
+  ul { padding-left: 22px; }
+  li { margin-bottom: 6px; }
+  code { font-family: var(--mono); font-size: 0.86em; padding: 2px 6px; border-radius: 6px; background: color-mix(in srgb, var(--line) 60%, transparent); }
+  footer { padding-block: 32px 48px; color: var(--muted); font-size: 14px; border-top: 1px solid var(--line); }
+</style>
+</head>
+<body>
+
+<nav class="nav"><div class="wrap">
+  <a class="brand" href="index.html"><img src="images/icon.png" alt="">JBLControl</a>
+</div></nav>
+
+<main><div class="wrap">
+  <h1>Privacy Policy</h1>
+  <p class="updated">Last updated 2026-10-26.</p>
+
+  <p>JBLControl doesn't collect, store or share any personal data. There's no account, no sign-in and no analytics or tracking of any kind, on Mac or Windows.</p>
+
+  <h2>What the app does on its own device</h2>
+  <p>JBLControl talks to your JBL speaker directly over Bluetooth LE — battery level, EQ presets and equalizer settings are read from and written to the speaker itself. This never leaves your computer and your speaker; it isn't sent to us or anyone else.</p>
+  <p>Your preferences (such as launch-at-login or your last-connected speaker) are stored only in your operating system's standard local settings (<code>UserDefaults</code> on Mac, the registry/local app data on Windows) and never transmitted anywhere.</p>
+
+  <h2>What goes over the internet</h2>
+  <p>JBLControl makes network requests to exactly two places, both read-only and neither requiring any personal information:</p>
+  <ul>
+    <li><b>GitHub</b> (<code>api.github.com</code>) — to check whether a newer version is available. This is a standard anonymous HTTPS request; it doesn't send any identifying information beyond what any web request includes (e.g. your IP address, inherent to the internet).</li>
+    <li><b>jbl.com</b> — to download your speaker model's official product photo, so the app can show it. Only the model and color code are used to pick the right image.</li>
+  </ul>
+  <p>Neither of these services is used for tracking or analytics, and JBLControl doesn't integrate any third-party analytics, advertising or tracking SDKs.</p>
+
+  <h2>Diagnostics reports</h2>
+  <p>If you choose <b>Copy Diagnostics</b> from the app's menu, it builds a text report (app version, speaker model, recent protocol traffic) and copies it to your clipboard — nothing is sent automatically. It's meant to be pasted into a GitHub issue you submit yourself, and the report already masks your speaker's MAC address and serial number before it's copied.</p>
+
+  <h2>Children's privacy</h2>
+  <p>JBLControl does not knowingly collect any information from anyone, including children, because it does not collect information from anyone at all.</p>
+
+  <h2>Changes to this policy</h2>
+  <p>If this policy ever changes, the update will be posted on this page with a new "last updated" date.</p>
+
+  <h2>Contact</h2>
+  <p>JBLControl is free, open-source software. You can read every line of its source code, or ask a question, at <a href="https://github.com/ffrafat/JBLControl">github.com/ffrafat/JBLControl</a>.</p>
+</div></main>
+
+<footer><div class="wrap">
+  <p>JBLControl is unofficial and not affiliated with or endorsed by JBL or Harman International.</p>
+</div></footer>
+
+</body>
+</html>
