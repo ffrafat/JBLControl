@@ -91,19 +91,28 @@ function Banner([string]$headline, [string]$subhead, [string]$imageHtml) {
 "@
 }
 
+# Render() writes a same-named "<png>.full.png" sibling before cropping, so every call targets a path
+# inside $work (never $outDir directly) and is copied out afterward — otherwise that intermediate file
+# is left behind next to the real output.
+function RenderToOutput([string]$html, [string]$name) {
+    $tmp = Join-Path $work $name
+    Render $html 1920 1080 $tmp
+    Copy-Item $tmp (Join-Path $outDir $name) -Force
+}
+
 # 1. Hero / overview — the main window, full.
 $appShot = Uri (Join-Path $images 'windows-app.png')
 $html1 = Banner 'JBL speaker control, right in your window and tray.' `
     'Battery, JBL&rsquo;s EQ presets and a 7-band custom equalizer &mdash; no phone, no account.' `
     "<img src=`"$appShot`" style=`"height:700px;filter:drop-shadow(0 30px 50px rgba(40,10,0,.45));border-radius:14px`">"
-Render $html1 1920 1080 (Join-Path $outDir 'Screenshot-1-Overview.png')
+RenderToOutput $html1 'Screenshot-1-Overview.png'
 
 # 2. Tray panel — convenience.
 $trayShot = Uri (Join-Path $images 'windows-tray.png')
 $html2 = Banner 'Always one click away.' `
     'A compact panel in your system tray, with everything the main window has.' `
     "<img src=`"$trayShot`" style=`"height:700px;filter:drop-shadow(0 30px 50px rgba(40,10,0,.45));border-radius:14px`">"
-Render $html2 1920 1080 (Join-Path $outDir 'Screenshot-2-Tray.png')
+RenderToOutput $html2 'Screenshot-2-Tray.png'
 
 # 3. Equalizer, zoomed — crop the presets+equalizer region out of the main window shot
 #    (source image is 1558x1037; the region sits roughly at x:480-1220, y:370-860).
@@ -114,7 +123,7 @@ $html3 = Banner 'A real 7-band equalizer, not a toy.' `
   <img src="$appShot" width="1558" height="1037" style="margin-left:-480px;margin-top:-370px;display:block">
 </div>
 "@
-Render $html3 1920 1080 (Join-Path $outDir 'Screenshot-3-Equalizer.png')
+RenderToOutput $html3 'Screenshot-3-Equalizer.png'
 
 Remove-Item -Recurse -Force $work -ErrorAction SilentlyContinue
 Write-Host "wrote $outDir\Screenshot-*.png"
