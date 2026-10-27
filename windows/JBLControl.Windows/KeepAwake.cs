@@ -136,11 +136,14 @@ public sealed class TonePlayer
     {
         if (playing) return;
         playing = true;
-        var player = new MediaPlayer { AudioDevice = output, AudioCategory = MediaPlayerAudioCategory.Other };
-        // Keep the tone out of the media overlay and lock-screen controls.
-        player.CommandManager.IsEnabled = false;
+        MediaPlayer? player = null;
         try
         {
+            // Inside the try: a speaker switched off a moment ago can make the player refuse its output,
+            // and `playing` must not stay set or Keep Awake never pings again.
+            player = new MediaPlayer { AudioDevice = output, AudioCategory = MediaPlayerAudioCategory.Other };
+            // Keep the tone out of the media overlay and lock-screen controls.
+            player.CommandManager.IsEnabled = false;
             var stream = new InMemoryRandomAccessStream();
             using (var writer = new DataWriter(stream))
             {
@@ -160,7 +163,14 @@ public sealed class TonePlayer
         }
         finally
         {
-            player.Dispose();
+            try
+            {
+                player?.Dispose();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[awake] couldn't release the player: {ex.Message}");
+            }
             playing = false;
         }
     }

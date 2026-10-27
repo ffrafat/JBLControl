@@ -46,6 +46,8 @@ public sealed class SpeakerManager : ObservableObject, IAsyncDisposable
     private readonly List<TrafficEntry> traffic = new();
     private readonly DispatcherQueueTimer pollTimer;
     private readonly DispatcherQueueTimer pruneTimer;
+    private readonly DispatcherQueueTimer retryTimer;
+    private DateTimeOffset lastReceived = DateTimeOffset.Now;
     private MessageDecoder decoder = new();
     private BluetoothLEAdvertisementWatcher? watcher;
     private Radio? radio;
@@ -86,6 +88,15 @@ public sealed class SpeakerManager : ObservableObject, IAsyncDisposable
         pollTimer.Interval = TimeSpan.FromSeconds(60);
         pollTimer.Tick += (_, _) => Guard(() =>
         {
+            // Every poll is answered; two unanswered ones mean the link died without Windows reporting it.
+            if (Status == SpeakerStatus.Connected && DateTimeOffset.Now - lastReceived > TimeSpan.FromSeconds(130))
+            {
+                Debug.WriteLine("[ble] speaker stopped answering");
+                connectAttempt++;
+                Teardown();
+                Reconnect();
+                return;
+            }
             Enqueue(new List<byte[]> { Frame.RequestInfo.Encoded });
             RequestEqIfUnknown();
         });
@@ -93,6 +104,10 @@ public sealed class SpeakerManager : ObservableObject, IAsyncDisposable
         pruneTimer.Interval = TimeSpan.FromSeconds(4);
         pruneTimer.Tick += (_, _) => Guard(PruneSilentSpeakers);
         pruneTimer.Start();
+        retryTimer = ui.CreateTimer();
+        retryTimer.Interval = TimeSpan.FromSeconds(15);
+        retryTimer.Tick += (_, _) => Guard(RetrySavedSpeaker);
+        retryTimer.Start();
         prefs.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(Preferences.AllowExperimentalWrites)) OnPropertyChanged(nameof(CanWrite));
@@ -343,10 +358,18 @@ public sealed class SpeakerManager : ObservableObject, IAsyncDisposable
     private void StopScan()
     {
         if (watcher is null) return;
-        watcher.Received -= OnAdvertisementReceived;
-        watcher.Stopped -= OnWatcherStopped;
-        watcher.Stop();
+        var old = watcher;
         watcher = null;
+        old.Received -= OnAdvertisementReceived;
+        old.Stopped -= OnWatcherStopped;
+        try
+        {
+            old.Stop();
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[ble] couldn't stop scanning: {ex.Message}"); // already stopped, or the radio went away
+        }
     }
 
     /// <summary>Drops speakers that haven't advertised for a while (they were switched off or moved away).</summary>
@@ -359,6 +382,16 @@ public sealed class SpeakerManager : ObservableObject, IAsyncDisposable
         if (removed > 0) DiscoveredChanged();
     }
 
+    /// <summary>A speaker that was switched off and on again often stops advertising once Windows has reconnected
+    /// its audio, so waiting for a sighting can wait forever: periodically try the remembered address directly.</summary>
+    private void RetrySavedSpeaker()
+    {
+        if (Status != SpeakerStatus.Searching || activeAddress is not null || radio?.State != RadioState.On) return;
+        if (!prefs.AutoConnect || prefs.SavedSpeakerAddress is not { } saved) return;
+        Debug.WriteLine($"[ble] retrying the remembered speaker {saved:X12}");
+        Connect(saved);
+    }
+
     private void DiscoveredChanged()
     {
         OnPropertyChanged(nameof(Discovered));
@@ -366,6 +399,19 @@ public sealed class SpeakerManager : ObservableObject, IAsyncDisposable
     }
 
     private void OnAdvertisementReceived(BluetoothLEAdvertisementWatcher sender, BluetoothLEAdvertisementReceivedEventArgs args)
+    {
+        // WinRT raises this on a thread-pool thread, where an exception isn't caught by anything and ends the process.
+        try
+        {
+            ReadAdvertisement(sender, args);
+        }
+        catch (Exception ex)
+        {
+            CrashLog.Write(ex);
+        }
+    }
+
+    private void ReadAdvertisement(BluetoothLEAdvertisementWatcher sender, BluetoothLEAdvertisementReceivedEventArgs args)
     {
         var ad = args.Advertisement;
         var summary = new Dictionary<string, string>();
@@ -529,21 +575,33 @@ public sealed class SpeakerManager : ObservableObject, IAsyncDisposable
         _ = WatchdogAsync(address, attempt);
         try
         {
-            device = await BluetoothLEDevice.FromBluetoothAddressAsync(address);
-            if (attempt != connectAttempt) return;
-            if (device is null)
+            // Locals until the attempt is known to still be current: a stale attempt that finished late must not
+            // overwrite (and leak) the link a newer attempt is building in these fields.
+            var dev = await BluetoothLEDevice.FromBluetoothAddressAsync(address);
+            if (attempt != connectAttempt)
+            {
+                dev?.Dispose();
+                return;
+            }
+            if (dev is null)
             {
                 Fail(attempt, "couldn't resolve the speaker from its address");
                 return;
             }
-            device.ConnectionStatusChanged += OnConnectionStatusChanged;
+            device = dev;
+            dev.ConnectionStatusChanged += OnConnectionStatusChanged;
 
             // Keeps the link up while we hold it, instead of Windows dropping it when idle.
-            session = await GattSession.FromDeviceIdAsync(device.BluetoothDeviceId);
-            if (attempt != connectAttempt) return;
-            session.MaintainConnection = true;
+            var gatt = await GattSession.FromDeviceIdAsync(dev.BluetoothDeviceId);
+            if (attempt != connectAttempt)
+            {
+                gatt.Dispose();
+                return;
+            }
+            session = gatt;
+            gatt.MaintainConnection = true;
 
-            var services = await device.GetGattServicesForUuidAsync(Guid.Parse(Jbl.ServiceUuid), BluetoothCacheMode.Uncached);
+            var services = await dev.GetGattServicesForUuidAsync(Guid.Parse(Jbl.ServiceUuid), BluetoothCacheMode.Uncached);
             if (attempt != connectAttempt) return;
             if (services.Status != GattCommunicationStatus.Success || services.Services.Count == 0)
             {
@@ -552,8 +610,9 @@ public sealed class SpeakerManager : ObservableObject, IAsyncDisposable
             }
             service = services.Services[0];
 
-            var txResult = await service.GetCharacteristicsForUuidAsync(Guid.Parse(Jbl.WriteUuid), BluetoothCacheMode.Uncached);
-            var rxResult = await service.GetCharacteristicsForUuidAsync(Guid.Parse(Jbl.NotifyUuid), BluetoothCacheMode.Uncached);
+            var svc = service;
+            var txResult = await svc.GetCharacteristicsForUuidAsync(Guid.Parse(Jbl.WriteUuid), BluetoothCacheMode.Uncached);
+            var rxResult = await svc.GetCharacteristicsForUuidAsync(Guid.Parse(Jbl.NotifyUuid), BluetoothCacheMode.Uncached);
             if (attempt != connectAttempt) return;
             if (txResult.Characteristics.Count == 0 || rxResult.Characteristics.Count == 0)
             {
@@ -579,6 +638,7 @@ public sealed class SpeakerManager : ObservableObject, IAsyncDisposable
             Remember(advertised?.Name, advertised?.ProductId ?? ProductId, address);
             GattSummary.Clear();
             decoder = new MessageDecoder();
+            lastReceived = DateTimeOffset.Now;
             Status = SpeakerStatus.Connected;
             var requests = new List<byte[]> { Frame.RequestInfo.Encoded, Frame.RequestVersion.Encoded };
             if (Codec is { } codec) requests.AddRange(codec.ReadRequests());
@@ -623,25 +683,45 @@ public sealed class SpeakerManager : ObservableObject, IAsyncDisposable
 
     private void OnConnectionStatusChanged(BluetoothLEDevice sender, object args)
     {
-        var state = sender.ConnectionStatus;
+        // Runs on a thread-pool thread, and the speaker being switched off is exactly when the device object
+        // is being torn down: reading it can throw, and nothing up the stack would catch that.
+        BluetoothConnectionStatus state;
+        try
+        {
+            state = sender.ConnectionStatus;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[ble] couldn't read the connection status: {ex.Message}");
+            state = BluetoothConnectionStatus.Disconnected;
+        }
         Post(() =>
         {
             if (sender != device || state != BluetoothConnectionStatus.Disconnected || Status != SpeakerStatus.Connected) return;
             Debug.WriteLine("[ble] disconnected");
-            ClearDeviceInfo();
-            if (activeAddress is { } address) Connect(address);
-            Scan();
+            Reconnect();
         });
+    }
+
+    /// <summary>The link dropped (speaker switched off, out of range, adapter reset): forget its state and
+    /// try again, scanning meanwhile so a speaker that comes back under a new address is found.</summary>
+    private void Reconnect()
+    {
+        ClearDeviceInfo();
+        if (activeAddress is { } address) Connect(address);
+        Scan();
     }
 
     private void Teardown()
     {
         pollTimer.Stop();
-        if (rx is not null) rx.ValueChanged -= OnValueChanged;
-        if (device is not null) device.ConnectionStatusChanged -= OnConnectionStatusChanged;
-        service?.Dispose();
-        session?.Dispose();
-        device?.Dispose();
+        // Releasing a link to a speaker that just vanished can throw; the rest must still be reset.
+        Release(() => { if (rx is not null) rx.ValueChanged -= OnValueChanged; });
+        Release(() => { if (device is not null) device.ConnectionStatusChanged -= OnConnectionStatusChanged; });
+        Release(() => service?.Dispose());
+        Release(() => session?.Dispose());
+        Release(() => device?.Dispose());
+        writing = false; // a write to the old link may never return; the next link must not wait for it
         rx = null;
         tx = null;
         service = null;
@@ -651,6 +731,18 @@ public sealed class SpeakerManager : ObservableObject, IAsyncDisposable
         eqInFlight = false;
         eqNext = null;
         eqTimeout?.Cancel();
+    }
+
+    private static void Release(Action action)
+    {
+        try
+        {
+            action();
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[ble] release failed: {ex.Message}");
+        }
     }
 
     /// <summary>Forget what the last speaker reported, so none of it shows for whichever speaker connects next.</summary>
@@ -698,6 +790,7 @@ public sealed class SpeakerManager : ObservableObject, IAsyncDisposable
     {
         if (writing || tx is not { } characteristic || writeQueue.Count == 0) return;
         writing = true;
+        int attempt = connectAttempt;
         try
         {
             while (writeQueue.Count > 0 && tx == characteristic)
@@ -706,7 +799,15 @@ public sealed class SpeakerManager : ObservableObject, IAsyncDisposable
                 Record(Direction.Sent, next.Data);
                 var result = await characteristic.WriteValueWithResultAsync(next.Data.AsBuffer(), GattWriteOption.WriteWithResponse);
                 if (result.Status != GattCommunicationStatus.Success)
+                {
                     Debug.WriteLine($"[ble] write failed: {result.Status}");
+                    // The speaker is gone but Windows hasn't said so: treat it as a dropped link.
+                    if (result.Status == GattCommunicationStatus.Unreachable && attempt == connectAttempt && Status == SpeakerStatus.Connected)
+                    {
+                        Reconnect();
+                        return;
+                    }
+                }
                 if (next.IsEqWrite && Codec is { WriteRepliesWithState: false } && !writeQueue.Any(o => o.IsEqWrite))
                 {
                     // Acknowledged at the ATT layer; give the speaker a moment before reading back.
@@ -718,6 +819,8 @@ public sealed class SpeakerManager : ObservableObject, IAsyncDisposable
         {
             Debug.WriteLine($"[ble] write error: {ex.Message}");
         }
+        // A link torn down meanwhile already reset this (Teardown); the flag now belongs to the newer link.
+        if (attempt != connectAttempt) return;
         writing = false;
         if (tx is not null && writeQueue.Count > 0) Pump();
     }
@@ -762,7 +865,16 @@ public sealed class SpeakerManager : ObservableObject, IAsyncDisposable
 
     private void OnValueChanged(GattCharacteristic sender, GattValueChangedEventArgs args)
     {
-        byte[] bytes = args.CharacteristicValue.ToArray();
+        byte[] bytes;
+        try
+        {
+            bytes = args.CharacteristicValue.ToArray();
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[ble] couldn't read a notification: {ex.Message}"); // thread-pool callback: never throw
+            return;
+        }
         Post(() =>
         {
             if (sender != rx) return;
@@ -820,6 +932,7 @@ public sealed class SpeakerManager : ObservableObject, IAsyncDisposable
 
     private void Record(Direction direction, byte[] data)
     {
+        if (direction == Direction.Received) lastReceived = DateTimeOffset.Now;
         traffic.Add(new TrafficEntry(DateTimeOffset.Now, direction, data));
         if (traffic.Count > 200) traffic.RemoveRange(0, traffic.Count - 200);
     }
@@ -869,6 +982,7 @@ public sealed class SpeakerManager : ObservableObject, IAsyncDisposable
     {
         connectAttempt++;
         pruneTimer.Stop();
+        retryTimer.Stop();
         StopScan();
         Teardown();
         return ValueTask.CompletedTask;
