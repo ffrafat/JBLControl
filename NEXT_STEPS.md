@@ -1,0 +1,35 @@
+# Next steps (handoff note)
+
+Written 2026-10-27 so work can continue on another machine. Delete this file once the items are done.
+
+## State
+
+- v0.8.1 is tagged and pushed. It fixes two Windows bugs reported on Reddit: the app not finding the speaker
+  again after it was switched off and on, and a crash when a speaker drops out. The changes are in
+  `windows/JBLControl.Windows/SpeakerManager.cs` and `KeepAwake.cs`. They were reasoned from the code and
+  have not been tested with a real speaker (CI build and the 29 protocol tests pass).
+- The GitHub release `v0.8.1` is still a **draft**: CI attached the Windows installers and zips, but there is
+  no Mac DMG. The Mac app is unchanged in 0.8.1. Build the DMG on a Mac, attach it, then publish the draft
+  (publishing without it leaves the Mac download link on the release page empty).
+
+## Open work
+
+1. **Speaker photos.** Only the Flip 7 has a photo (`PhotoSources` in `windows/JBLControl.Windows/PhotoStore.cs`
+   and `Sources/JBLControl/PhotoStore.swift`); every other model shows the drawn placeholder. This is GitHub
+   issue 2 (Charge 5 "icon wrong") and a Reddit comment about the Charge 6 image. Add the paths to both tables.
+   - Photos are fetched from the JBL image CDN at runtime and cached. Do not commit the images
+     (see CONTRIBUTING.md).
+   - The hash folder in the URL (`dwXXXXXXXX/`) is ignored by the CDN; only the file name matters.
+   - File name shape: `[LS_]JBL_<MODEL>_[<COLOR>_]HERO_[<COLOR>_]<NUMBER>_x<N>.png`. The number (3 to 5 digits)
+     and `x<N>` suffix cannot be guessed, so each color needs one URL copied from the product page
+     (browser DevTools, or right-click the image, "Copy image address").
+   - Names found so far: `LS_JBL_CHARGE_6_BLACK_HERO_071_x1.png`, `LS_JBL_CHARGE_6_BLUE_HERO_079_x1.png`,
+     `JBL_GO_4_HERO_BLACK_48156_x4.png`. Color codes per model are in `Catalog.Generated.cs`.
+   - jbl.com blocks scripted requests (bot check). Use a normal browser session; do not try to bypass the check.
+   - After adding a Charge photo, check the Windows and Mac artwork code: cylinder photos are rotated 90 degrees
+     (`SpeakerArtwork`), which may be wrong for Charge images.
+2. **Boombox 4** (`0x214E`, Protocol 4, experimental) is reported as "not detected" on Windows. Ask the reporter
+   (Reddit user Wass_uppppp) for a Copy Diagnostics report in a GitHub issue before changing anything.
+3. **Feature requests, not planned:** larger battery text, a photo per speaker (see 1), power on/off and
+   firmware updates (no way to wake an off speaker over Bluetooth; flashing is risky).
+4. **Reddit:** reply to the Windows reconnect and crash reports with "fixed in v0.8.1" once the release is published.
