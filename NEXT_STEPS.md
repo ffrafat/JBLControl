@@ -4,13 +4,12 @@ Written 2026-10-27 so work can continue on another machine. Delete this file onc
 
 ## State
 
-- v0.8.1 is tagged and pushed. It fixes two Windows bugs reported on Reddit: the app not finding the speaker
-  again after it was switched off and on, and a crash when a speaker drops out. The changes are in
-  `windows/JBLControl.Windows/SpeakerManager.cs` and `KeepAwake.cs`. They were reasoned from the code and
-  have not been tested with a real speaker (CI build and the 29 protocol tests pass).
-- The GitHub release `v0.8.1` is still a **draft**: CI attached the Windows installers and zips, but there is
-  no Mac DMG. The Mac app is unchanged in 0.8.1. Build the DMG on a Mac, attach it, then publish the draft
-  (publishing without it leaves the Mac download link on the release page empty).
+- **v0.9.0 is the current release (2026-10-27), Mac and Windows.** It includes the v0.8.1 Windows fixes
+  (reconnect after the speaker is switched off and on, no crash when it drops out), bundled speaker photos,
+  volume and mute, a larger battery number and the fitted EQ chart. The `v0.8.1` tag exists but its release
+  was left as a draft and never published: everything in it shipped in v0.9.0.
+- Not tried on hardware yet: the Windows reconnect/crash fixes and Windows volume and mute (the owner chose to
+  release without a Windows test). The Mac volume row was checked with a Flip 7.
 
 ## Open work
 

@@ -90,6 +90,8 @@ finds it by itself.
 - The **window** lists each nearby speaker in the sidebar; click one to switch to it. The connected speaker is
   shown in full: presets, the custom equalizer, battery, firmware and Keep Awake. **Settings** and **About**
   are at the bottom of the sidebar.
+- **Volume and mute** appear under the speaker while it's your Mac's sound output (choose it in
+  Control Center → Sound). They set the same volume as your keyboard's volume keys.
 - **Closing the window keeps JBLControl running in the menu bar.** It then has no Dock icon until you open
   the window again. **Click** the menu bar icon for a compact panel with presets and the equalizer; its
   **Open JBLControl** button and ••• menu bring the window back, as does opening JBLControl from
@@ -199,8 +201,8 @@ Nothing else to install: the download includes everything it needs.
   window back.
 - If the tray icon isn't visible, Windows put it in the hidden icons (**^**): drag it onto the taskbar, or turn
   it on in **Settings → Personalization → Taskbar → Other system tray icons**.
-- **Keep Awake** works as on the Mac, while this PC is the speaker's sound output (choose it in
-  **Settings → System → Sound**).
+- **Keep Awake** and **volume and mute** work as on the Mac, while this PC is the speaker's sound output
+  (choose it in **Settings → System → Sound**).
 
 **Start at login:** Settings → **Launch at login** (or the option in the installer). It then starts quietly in
 the tray.
