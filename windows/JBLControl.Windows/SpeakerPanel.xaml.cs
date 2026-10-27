@@ -1,5 +1,6 @@
 using JBLControlKit.Windows;
 using Microsoft.UI;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
@@ -24,10 +25,41 @@ public sealed partial class SpeakerPanel : UserControl
     private readonly List<(ToggleButton Button, EQPreset Preset)> presetButtons = new();
     private string chipsBuiltFor = "";
 
+    private readonly SpeakerVolume volume = new();
+    private DispatcherQueueTimer? volumeTimer;
+    private bool settingVolumeSlider;
+    private DateTimeOffset lastVolumeDrag;
+
     public SpeakerPanel()
     {
         InitializeComponent();
         Equalizer.GainChanged += (band, gain) => speaker.SetCustomGain(gain, band);
+        // Volume also changes from the keyboard and the Sound settings, so keep it current while shown.
+        Loaded += (_, _) =>
+        {
+            volumeTimer ??= CreateVolumeTimer();
+            volumeTimer.Start();
+            _ = RefreshVolumeAsync();
+        };
+        Unloaded += (_, _) => volumeTimer?.Stop();
+    }
+
+    private DispatcherQueueTimer CreateVolumeTimer()
+    {
+        var timer = DispatcherQueue.CreateTimer();
+        timer.Interval = TimeSpan.FromSeconds(1);
+        timer.Tick += async (_, _) =>
+        {
+            try
+            {
+                await RefreshVolumeAsync();
+            }
+            catch (Exception ex)
+            {
+                CrashLog.Write(ex); // a timer callback that throws would take the whole tray app down
+            }
+        };
+        return timer;
     }
 
     /// <summary>The main window lists every speaker beside the panel, so it turns the switcher chips off.</summary>
@@ -72,6 +104,7 @@ public sealed partial class SpeakerPanel : UserControl
 
         Header.Visibility = Vis(connected);
         if (connected) RenderHeader(model);
+        RenderVolume();
 
         bool hasEq = model?.HasEq ?? false;
         var presets = model?.PickerPresets ?? new List<EQPreset>();
@@ -99,6 +132,46 @@ public sealed partial class SpeakerPanel : UserControl
         NoEqText.Text = model is null ? "This speaker isn't in the catalog yet." : "JBL's app has no EQ for this model.";
 
         Rendered?.Invoke();
+    }
+
+    private async Task RefreshVolumeAsync()
+    {
+        if (speaker is null || speaker.Status != SpeakerStatus.Connected) return;
+        await volume.RefreshAsync(speaker.Name);
+        bool wasVisible = VolumeRow.Visibility == Visibility.Visible;
+        RenderVolume();
+        if (wasVisible != (VolumeRow.Visibility == Visibility.Visible)) Rendered?.Invoke();
+    }
+
+    /// <summary>VolumeRow.swift: mute button, slider and percentage.</summary>
+    private void RenderVolume()
+    {
+        bool visible = speaker.Status == SpeakerStatus.Connected && volume.IsAvailable;
+        VolumeRow.Visibility = Vis(visible);
+        if (!visible) return;
+        float level = volume.IsMuted ? 0 : volume.Level;
+        MuteIcon.Glyph = level == 0 ? "" : level < 0.34 ? "" : level < 0.67 ? "" : "";
+        ToolTipService.SetToolTip(MuteButton, volume.IsMuted ? "Unmute" : "Mute");
+        VolumeText.Text = $"{Math.Round(level * 100)}%";
+        // Don't fight the slider while it's being dragged.
+        if (DateTimeOffset.Now - lastVolumeDrag < TimeSpan.FromSeconds(1.5)) return;
+        settingVolumeSlider = true;
+        VolumeSlider.Value = Math.Round(level * 100);
+        settingVolumeSlider = false;
+    }
+
+    private void Volume_Changed(object sender, RangeBaseValueChangedEventArgs e)
+    {
+        if (settingVolumeSlider || speaker is null) return;
+        lastVolumeDrag = DateTimeOffset.Now;
+        volume.SetLevel((float)(e.NewValue / 100));
+        RenderVolume();
+    }
+
+    private void Mute_Click(object sender, RoutedEventArgs e)
+    {
+        volume.SetMuted(!volume.IsMuted);
+        RenderVolume();
     }
 
     private void RenderSearching(bool connected)
@@ -177,13 +250,13 @@ public sealed partial class SpeakerPanel : UserControl
         if (level is { } l)
         {
             bool low = l <= Notifier.LowBatteryThreshold && !speaker.Charging;
-            BatteryFill.Width = Math.Max(2, (32 - 3) * Math.Clamp(l, 0, 100) / 100.0);
+            BatteryFill.Width = Math.Max(2, (40 - 3) * Math.Clamp(l, 0, 100) / 100.0);
             BatteryFill.Background = speaker.Charging ? new SolidColorBrush(Color.FromArgb(0xFF, 0x34, 0xC7, 0x59))
                 : low ? new SolidColorBrush(Color.FromArgb(0xFF, 0xFF, 0x3B, 0x30))
                 : new SolidColorBrush(Color.FromArgb(0x38, 0x80, 0x80, 0x80));
             BatteryBolt.Visibility = Vis(speaker.Charging);
             BatteryText.Text = l.ToString();
-            BatteryText.FontSize = l >= 100 ? 8.5 : 9.5;
+            BatteryText.FontSize = l >= 100 ? 11 : 12.5;
             ToolTipService.SetToolTip(BatteryGlyph, speaker.Charging ? $"Battery {l}%, charging" : $"Battery {l}%");
         }
         KeepAwakeCup.Visibility = Vis(awake);

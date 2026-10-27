@@ -35,6 +35,9 @@ Written 2026-10-27 so work can continue on another machine. Delete this file onc
      (`SpeakerArtwork`), which may be wrong for Charge images.
 2. **Boombox 4** (`0x214E`, Protocol 4, experimental) is reported as "not detected" on Windows. Ask the reporter
    (Reddit user Wass_uppppp) for a Copy Diagnostics report in a GitHub issue before changing anything.
-3. **Feature requests, not planned:** larger battery text, a photo per speaker (see 1), power on/off and
-   firmware updates (no way to wake an off speaker over Bluetooth; flashing is risky).
+3. **Reddit requests done (2026-10-27), not yet released:** larger battery number; EQ chart scale fitted to the
+   bands' real limits (no empty headroom above +6 dB); volume slider and mute (controls the speaker's audio
+   output on the computer, since JBL's protocol has no volume command; Windows uses Core Audio COM, not yet
+   compiled or tried on hardware). Not planned: power on/off and firmware updates (no way to wake an off
+   speaker over Bluetooth; flashing is risky).
 4. **Reddit:** reply to the Windows reconnect and crash reports with "fixed in v0.8.1" once the release is published.

@@ -147,7 +147,7 @@ struct BatteryPill: View {
                 }
             }
             .padding(.horizontal, 9)
-            .padding(.vertical, 5)
+            .padding(.vertical, 3)
             .adaptiveGlass(.regular, in: .capsule)
             .help(level.map { charging ? "Battery \($0)%, charging" : "Battery \($0)%" } ?? "")
         }
@@ -178,18 +178,18 @@ struct BatteryGlyph: View {
                 .padding(1.5)
                 HStack(spacing: 1) {
                     if charging {
-                        Image(systemName: "bolt.fill").font(.system(size: 7, weight: .black))
+                        Image(systemName: "bolt.fill").font(.system(size: 9, weight: .black))
                     }
                     Text("\(level)")
-                        .font(.system(size: level >= 100 ? 8.5 : 9.5, weight: .bold))
+                        .font(.system(size: level >= 100 ? 11 : 12.5, weight: .bold))
                         .monospacedDigit()
                 }
                 .foregroundStyle(.primary)
             }
-            .frame(width: 32, height: 15)
+            .frame(width: 40, height: 19)
             RoundedRectangle(cornerRadius: 1)
                 .fill(.primary.opacity(0.4))
-                .frame(width: 1.5, height: 5)
+                .frame(width: 2, height: 6)
         }
         .accessibilityElement()
         .accessibilityLabel(charging ? "Battery \(level)%, charging" : "Battery \(level)%")

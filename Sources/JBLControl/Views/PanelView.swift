@@ -74,6 +74,7 @@ struct SpeakerControls: View {
                         .transition(.opacity)
                 }
                 HeaderView(artworkSize: artworkSize)
+                VolumeRow()
             }
             if connected, let model = speaker.model, model.hasEQ {
                 if model.pickerPresets.count > 1 {

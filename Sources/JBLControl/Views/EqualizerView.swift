@@ -8,10 +8,12 @@ struct EqualizerView: View {
 
     private var specs: [EQBandSpec] { speaker.model?.customBands ?? [] }
 
-    /// Display range in dB: a little headroom past the widest band.
+    /// Display range in dB: the bands' own limits plus a little headroom, so the chart has no empty
+    /// space the sliders can't reach (the 7-band EQ goes from −9 to +6).
     private var range: ClosedRange<Double> {
-        let edge = Double(specs.map { max(abs($0.range.lowerBound), abs($0.range.upperBound)) }.max() ?? 6)
-        return -(edge + 1)...(edge + 1)
+        let low = Double(specs.map(\.range.lowerBound).min() ?? -6)
+        let high = Double(specs.map(\.range.upperBound).max() ?? 6)
+        return (low - 1)...(high + 1)
     }
 
     /// The combined response, on models whose custom EQ is the 7-band parametric one.

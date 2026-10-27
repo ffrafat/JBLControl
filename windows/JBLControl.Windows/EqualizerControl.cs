@@ -186,13 +186,15 @@ public sealed class EqualizerControl : Grid
         foreach (var s in sliders) canvas.Children.Add(s);
     }
 
-    /// <summary>Display range in dB: a little headroom past the widest band.</summary>
+    /// <summary>Display range in dB: the bands' own limits plus a little headroom, so the chart has no empty
+    /// space the sliders can't reach (the 7-band EQ goes from −9 to +6).</summary>
     private (double Low, double High) Range
     {
         get
         {
-            double edge = specs.Count == 0 ? 6 : specs.Max(s => Math.Max(Math.Abs(s.RangeLow), Math.Abs(s.RangeHigh)));
-            return (-(edge + 1), edge + 1);
+            double low = specs.Count == 0 ? -6 : specs.Min(s => s.RangeLow);
+            double high = specs.Count == 0 ? 6 : specs.Max(s => s.RangeHigh);
+            return (low - 1, high + 1);
         }
     }
 

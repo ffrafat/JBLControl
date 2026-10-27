@@ -69,19 +69,19 @@
                         </StackPanel>
                     </Border>
                     <!-- Battery (percentage inside the glyph) and, while Keep Awake is on, a cup that turns it off. -->
-                    <Border x:Name="BatteryPill" Style="{StaticResource PillStyle}">
+                    <Border x:Name="BatteryPill" Style="{StaticResource PillStyle}" Padding="9,2">
                         <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                             <StackPanel x:Name="BatteryGlyph" Orientation="Horizontal" Spacing="1" VerticalAlignment="Center">
-                                <Grid Width="32" Height="15">
+                                <Grid Width="40" Height="19">
                                     <Border CornerRadius="4" BorderThickness="1"
                                             BorderBrush="{ThemeResource TextFillColorTertiaryBrush}" />
                                     <Border x:Name="BatteryFill" CornerRadius="2.5" Margin="1.5" HorizontalAlignment="Left" />
                                     <StackPanel Orientation="Horizontal" Spacing="1" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                        <FontIcon x:Name="BatteryBolt" Glyph="&#xE945;" FontSize="7" />
-                                        <TextBlock x:Name="BatteryText" FontSize="9.5" FontWeight="Bold" />
+                                        <FontIcon x:Name="BatteryBolt" Glyph="&#xE945;" FontSize="9" />
+                                        <TextBlock x:Name="BatteryText" FontSize="12.5" FontWeight="Bold" />
                                     </StackPanel>
                                 </Grid>
-                                <Border Width="1.5" Height="5" CornerRadius="1" VerticalAlignment="Center"
+                                <Border Width="2" Height="6" CornerRadius="1" VerticalAlignment="Center"
                                         Background="{ThemeResource TextFillColorTertiaryBrush}" />
                             </StackPanel>
                             <Button x:Name="KeepAwakeCup" Padding="0" MinWidth="0" MinHeight="0" Background="Transparent"
@@ -94,6 +94,26 @@
                 </StackPanel>
             </StackPanel>
         </Grid>
+
+        <!-- VolumeRow.swift: only while the speaker is one of this PC's sound outputs. -->
+        <Border x:Name="VolumeRow" Style="{StaticResource PillStyle}" CornerRadius="16" Padding="8,2,12,2" Visibility="Collapsed">
+            <Grid ColumnSpacing="8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="40" />
+                </Grid.ColumnDefinitions>
+                <Button x:Name="MuteButton" Padding="6,4" MinWidth="0" MinHeight="0" Background="Transparent"
+                        BorderThickness="0" VerticalAlignment="Center" Click="Mute_Click">
+                    <FontIcon x:Name="MuteIcon" Glyph="&#xE995;" FontSize="16" />
+                </Button>
+                <Slider x:Name="VolumeSlider" Grid.Column="1" Minimum="0" Maximum="100" StepFrequency="1"
+                        VerticalAlignment="Center" IsThumbToolTipEnabled="False" ValueChanged="Volume_Changed"
+                        AutomationProperties.Name="Volume" />
+                <TextBlock x:Name="VolumeText" Grid.Column="2" FontSize="12" FontWeight="Medium" VerticalAlignment="Center"
+                           HorizontalAlignment="Right" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            </Grid>
+        </Border>
 
         <!-- PresetPicker.swift: one toggle per preset, then Custom. Filled in from code. -->
         <Grid x:Name="PresetGrid" ColumnSpacing="6" Visibility="Collapsed" />

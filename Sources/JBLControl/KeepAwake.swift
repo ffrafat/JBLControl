@@ -70,12 +70,8 @@ final class KeepAwake {
         tone.play()
     }
 
-    /// The system output is this speaker (by its Bluetooth name), or any JBL when the name isn't known yet.
     private func isSpeaker(_ deviceName: String) -> Bool {
-        if let name = speaker?.name {
-            return deviceName.hasPrefix(name) || name.hasPrefix(deviceName)
-        }
-        return deviceName.localizedCaseInsensitiveContains("JBL")
+        AudioOutput.isSpeaker(deviceName, speakerName: speaker?.name)
     }
 }
 
@@ -99,6 +95,14 @@ enum AudioOutput {
                                                  mElement: kAudioObjectPropertyElementMain)
         guard AudioObjectGetPropertyData(device, &address, 0, nil, &size, &name) == noErr else { return nil }
         return name?.takeRetainedValue() as String?
+    }
+
+    /// The audio device is this speaker (by its Bluetooth name), or any JBL when the name isn't known yet.
+    static func isSpeaker(_ deviceName: String, speakerName: String?) -> Bool {
+        if let speakerName {
+            return deviceName.hasPrefix(speakerName) || speakerName.hasPrefix(deviceName)
+        }
+        return deviceName.localizedCaseInsensitiveContains("JBL")
     }
 }
 

@@ -112,9 +112,13 @@ public sealed class KeepAwake : ObservableObject
     /// <summary>The system output is this speaker (by its Bluetooth name), or any JBL when the name isn't known yet.
     /// Windows names Bluetooth outputs like "Speakers (FFR JBL Flip 7)", so this matches by containment
     /// where the Mac app (whose device names are the bare speaker name) matches by prefix.</summary>
-    private bool IsSpeaker(string deviceName)
+    private bool IsSpeaker(string deviceName) => IsSpeaker(deviceName, speaker.Name);
+
+    /// <summary>Whether an audio device is the speaker with this Bluetooth name (any JBL when it isn't known).
+    /// Shared with <see cref="SpeakerVolume"/>.</summary>
+    public static bool IsSpeaker(string deviceName, string? speakerName)
     {
-        if (speaker.Name is { } name)
+        if (speakerName is { } name)
             return deviceName.Contains(name, StringComparison.OrdinalIgnoreCase) || name.Contains(deviceName, StringComparison.OrdinalIgnoreCase);
         return deviceName.Contains("JBL", StringComparison.OrdinalIgnoreCase);
     }
