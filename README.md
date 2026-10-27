@@ -32,7 +32,7 @@ or system tray (Windows). No phone, no JBL Portable app.
 - 🔋 Battery, model, color and firmware at a glance
 - 🎚️ JBL's EQ presets (Signature, Chill, Energetic, Vocal…) and a custom equalizer with a live response curve
 - 🔄 Auto-reconnects, even though JBL speakers rotate their Bluetooth address
-- 🖼️ The speaker's photo in its actual color, built in for 18 models
+- 🖼️ The speaker's photo in its actual color, built in for 17 models
 - 🔀 One-click switching when several JBL speakers are nearby
 - 🔊 Volume and mute, while the speaker is your computer's sound output
 - ☕ Keep Awake: stops the speaker's auto power-off while your computer is playing to it (JBL has no setting for this)
