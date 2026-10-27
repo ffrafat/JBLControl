@@ -56,6 +56,7 @@ struct SpeakerControls: View {
     /// Speaker chips to switch between nearby speakers; the main window lists them in its sidebar instead.
     var showsSwitcher = true
     var artworkSize: CGFloat = 104
+    @State private var volume = SpeakerVolume()
 
     private var connected: Bool { speaker.status == .connected }
     private var ready: Bool { connected && speaker.eq != nil }
@@ -74,7 +75,10 @@ struct SpeakerControls: View {
                         .transition(.opacity)
                 }
                 HeaderView(artworkSize: artworkSize)
-                VolumeRow()
+                if volume.device != nil {
+                    VolumeRow(volume: volume)
+                        .transition(.opacity)
+                }
             }
             if connected, let model = speaker.model, model.hasEQ {
                 if model.pickerPresets.count > 1 {
@@ -94,6 +98,14 @@ struct SpeakerControls: View {
         .animation(.smooth, value: showSwitcher)
         .animation(.smooth(duration: 0.3), value: connected)
         .animation(.smooth(duration: 0.3), value: speaker.isCustomActive)
+        .animation(.smooth, value: volume.device != nil)
+        // Volume also changes from the keyboard and Control Center, so keep it current while shown.
+        .task(id: speaker.name) {
+            while !Task.isCancelled {
+                volume.refresh(speakerName: speaker.name)
+                try? await Task.sleep(for: .seconds(1))
+            }
+        }
     }
 }
 

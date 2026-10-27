@@ -13,11 +13,14 @@ final class SpeakerVolume {
     private(set) var level: Float = 0
     private(set) var isMuted = false
 
+    /// While the slider is being dragged, refreshing would fight it.
+    @ObservationIgnored var isEditing = false
     /// Bluetooth outputs often have no mute control; muting them sets the volume to 0 and remembers it.
     @ObservationIgnored private var levelBeforeMute: Float?
 
     /// Re-reads the device and its volume (they change from the keyboard, Control Center, or a reconnect).
     func refresh(speakerName: String?) {
+        guard !isEditing else { return }
         var reading: Float32?
         device = AudioOutput.outputDevices().first {
             guard AudioOutput.name(of: $0).map({ AudioOutput.isSpeaker($0, speakerName: speakerName) }) ?? false else { return false }
