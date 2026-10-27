@@ -1,0 +1,205 @@
+{
+  "206D": {
+    "model": "JBL Boombox 3",
+    "formFactor": "boombox",
+    "colors": {
+      "00": "dwd0f50684/1_JBL_BOOMBOX_3_SQUAD_HERO_33262_x2.png",
+      "08": "dwd0f50684/1_JBL_BOOMBOX_3_SQUAD_HERO_33262_x2.png"
+    }
+  },
+  "214E": {
+    "model": "JBL Boombox 4",
+    "formFactor": "boombox",
+    "colors": {
+      "00": "dwe154c3b4/LS_JBL_BOOMBOX_4_HERO_BLACK_0019_x4.png",
+      "01": "dw4f949bfa/LS_JBL_BOOMBOX_4_HERO_WHITE_0019_x4.png",
+      "02": "dwdfdb170c/LS_JBL_BOOMBOX_4_HERO_BLUE_0019_x4.png",
+      "14": "dw5fa96fb7/LS_JBL_BOOMBOX_4_BROWN_HERO_63284_x3.png",
+      "1A": "dw6e00eb72/LS_JBL_BOOMBOX_4_HERO_CAMO_0019_x3.png",
+      "1F": "dwdc7309c3/LS_JBL_BOOMBOX_4_ORANGE_HERO_63284_x3.png"
+    }
+  },
+  "2132": {
+    "model": "JBL Grip",
+    "formFactor": "compact",
+    "colors": {
+      "00": "dw0fedba2a/LS_JBL_GRIP_BLACK_HERO__0026_x3.png",
+      "01": "dwbfb9258b/LS_JBL_GRIP_WHITE_HERO__0026_x2.png",
+      "02": "dwacbe2397/LS_JBL_GRIP_BLUE_HERO__0026_x3.png",
+      "03": "dwb5a3a18d/LS_JBL_GRIP_RED_HERO_0026_x3.png",
+      "05": "dwcde00f67/LS_JBL_GRIP_PURPLE_HERO__0026_x3.png",
+      "19": "dwe85d0858/LS_JBL_GRIP_PINK_HERO__0026_x3.png",
+      "1A": "dwa4bec2aa/LS_JBL_GRIP_SQUAD_HERO__0027_x1.png"
+    }
+  },
+  "2168": {
+    "model": "JBL Go 5",
+    "formFactor": "compact",
+    "colors": {
+      "00": "dw67e1a397/LS_JBL_GO5_HERO_BLACK_0007_x4.png",
+      "01": "dwa2323e1a/LS_JBL_GO5_HERO_WHITE_0007_x3.png",
+      "02": "dw3ea03c19/LS_JBL_GO5_HERO_BLUE_0007_x4.png",
+      "03": "dw08448fb3/LS_JBL_GO5_HERO_RED_0007_x4.png",
+      "05": "dw06b12197/LS_JBL_GO5_HERO_PURPLE_0007_x4.png",
+      "18": "dw1bf527f8/LS_JBL_GO5_HERO_YELLOW_0007_x4.png",
+      "19": "dw6d4f2b38/LS_JBL_GO5_HERO_PINK_0007_x4.png",
+      "1A": "dw13bec5f7/LS_JBL_GO5_HERO_SQUAD_0010_x4.png",
+      "1B": "dw8ad3097b/LS_JBL_GO5_HERO_TURQUOISE_0007_x4.png",
+      "1C": "dw09599647/LS_JBL_GO5_HERO_ORANGE_0007_x4.png"
+    }
+  },
+  "2169": {
+    "model": "JBL Xtreme 5",
+    "formFactor": "cylinder",
+    "colors": {
+      "00": "dw9a870441/LS_JBL_XTREME_5_HERO_SQUAD_0028_x5.png",
+      "1A": "dw9a870441/LS_JBL_XTREME_5_HERO_SQUAD_0028_x5.png"
+    }
+  },
+  "204F": {
+    "model": "JBL Flip 6",
+    "formFactor": "cylinder",
+    "colors": {
+      "00": "dw4e91d6eb/1_JBL_FLIP6_HERO_BLACK_29391_x2.png",
+      "01": "dw4e91d6eb/1_JBL_FLIP6_HERO_BLACK_29391_x2.png",
+      "02": "dw0bb6b981/1_JBL_FLIP6_HERO_RED_29399_x1.png",
+      "03": "dw561380a8/1_JBL_FLIP6_HERO_BLUE_29399_x1.png",
+      "04": "dw57f25c0b/1_JBL_FLIP6_HERO_WHITE_29399_x1.png",
+      "05": "dw5c7592a2/1_JBL_FLIP6_HERO_GREEN_29399_x1.png",
+      "07": "dwe4c1a910/1_JBL_FLIP6_HERO_GREY_29399_x1.png",
+      "09": "dw46cc380c/1_JBL_FLIP6_HERO_TEAL_29399_x1.png",
+      "10": "dwf06d3c6e/1_JBL_FLIP6_HERO_PINK_29399_x1.png",
+      "13": "dwdd53473b/JBL_FLIP6_SQUAD_HERO_31828_x1.png"
+    }
+  },
+  "2040": {
+    "model": "JBL Charge 5",
+    "formFactor": "cylinder",
+    "colors": {
+      "00": "dw65eaac1a/JBL_CHARGE5_HERO_BLACK_0046_x1.png",
+      "01": "dw65eaac1a/JBL_CHARGE5_HERO_BLACK_0046_x1.png",
+      "02": "dw8c55b4fe/JBL_CHARGE5_HERO_RED_0029_x2.png",
+      "03": "dw2b67610b/JBL_CHARGE5_HERO_BLUE_0038_x3.png",
+      "05": "dw7edf5d80/JBL_CHARGE5_HERO_GREEN_0025_x2.png",
+      "07": "dwaf4f49bc/JBL_CHARGE5_HERO_GREY_0014_x1.png",
+      "09": "dw2e9353f8/JBL_CHARGE5_HERO_TEAL_0023_x2.png",
+      "10": "dw8aac15a0/JBL_CHARGE5_HERO_PINK_0041_x2.png",
+      "13": "dw9637c6a8/JBL_CHARGE5_HERO_CAMO_0049_x2.png"
+    }
+  },
+  "202F": {
+    "model": "JBL Xtreme 3",
+    "formFactor": "cylinder",
+    "colors": {
+      "00": "dw96337b57/JBL_XTREME_3_HERO_BLUE_0031_x1.png",
+      "03": "dw96337b57/JBL_XTREME_3_HERO_BLUE_0031_x1.png",
+      "08": "dw7211f714/JBL_XTREME_3_HERO_CAMO_0032_x1.png"
+    }
+  },
+  "1F31": {
+    "model": "JBL Flip 5",
+    "formFactor": "cylinder",
+    "colors": {
+      "00": "dwfa254b05/JBL_Flip5_Front_Fiesta-Red_046_x1-1605x1605px_Front.png"
+    }
+  },
+  "20DC": {
+    "model": "JBL Xtreme 4",
+    "formFactor": "cylinder",
+    "colors": {
+      "00": "dw4bd894e3/JBL_XTREME_4_HERO_CAMO_47142_X2_v2.png",
+      "03": "dw04d7318d/JBL_XTREME_4_HERO_BLUE_47139_X4_1.png",
+      "12": "dw230ab4da/JBL_XTREME_4_TOMORROWLAND_HERO_52861_x1.png",
+      "13": "dw4bd894e3/JBL_XTREME_4_HERO_CAMO_47142_X2_v2.png"
+    }
+  },
+  "20E4": {
+    "model": "JBL Go 4",
+    "formFactor": "compact",
+    "colors": {
+      "00": "dw96fc93ec/JBL_GO_4_HERO_BLACK_48156_x4.png",
+      "01": "dw96fc93ec/JBL_GO_4_HERO_BLACK_48156_x4.png",
+      "03": "dw15debaca/JBL_GO_4_HERO_BLUE_48170_x6.png"
+    }
+  },
+  "210A": {
+    "model": "JBL Go 4",
+    "formFactor": "compact",
+    "colors": {
+      "00": "dw96fc93ec/JBL_GO_4_HERO_BLACK_48156_x4.png",
+      "01": "dw96fc93ec/JBL_GO_4_HERO_BLACK_48156_x4.png",
+      "03": "dw15debaca/JBL_GO_4_HERO_BLUE_48170_x6.png"
+    }
+  },
+  "20F5": {
+    "model": "JBL Clip 5",
+    "formFactor": "compact",
+    "colors": {
+      "00": "dwf4fb1f8d/JBL_CLIP_5_HERO_BLACK_48128_x6.png",
+      "01": "dwf4fb1f8d/JBL_CLIP_5_HERO_BLACK_48128_x6.png",
+      "02": "dw0d714766/JBL_CLIP_5_HERO_RED_48132_x4.png",
+      "03": "dwc8ffbd5a/JBL_CLIP_5_HERO_BLUE_48143_x5.png",
+      "10": "dw4afb7036/JBL_CLIP_5_HERO_PINK_49706_x3.png",
+      "13": "dwfcbb770f/JBL_CLIP_5_HERO_CAMO_48148_x5.png",
+      "14": "dw6db560e4/JBL_CLIP_5_HERO_PURPLE_48139_x5.png",
+      "15": "dw539868d6/JBL_CLIP_5_HERO_BLACK_ORANGE_49704_x3.png"
+    }
+  },
+  "20E3": {
+    "model": "JBL Charge 6",
+    "formFactor": "cylinder",
+    "colors": {
+      "00": "dwf730bf50/LS_JBL_CHARGE_6_BLACK_HERO_071_x1.png",
+      "01": "dwf730bf50/LS_JBL_CHARGE_6_BLACK_HERO_071_x1.png",
+      "02": "dw634efeaf/JBL_CHARGE_6_RED_HERO_070_x1.png",
+      "03": "dw7d065d88/LS_JBL_CHARGE_6_BLUE_HERO_079_x1.png",
+      "04": "dwdb021b98/JBL_CHARGE_6_WHITE_HERO_080_x1.png",
+      "08": "dw65e3f3d0/JBL_CHARGE_6_SAND_HERO_077_x2.png",
+      "10": "dw0841be98/LS_JBL_CHARGE_6__PINK_HERO_075_x1.png",
+      "14": "dw64f87ff6/JBL_CHARGE_6_PURPLE_HERO_078_x1.png",
+      "16": "dw6431aa2a/JBL_CHARGE_6_SQUAD_HERO_074_x1.png",
+      "17": "dwdca077e1/JBL_CHARGE_6_FUNKY_BLACK_HERO_081_x1.png",
+      "18": "dw16f8eeba/LS_JBL_CHARGE_6_TURQUOISE_HERO_080_x2.png"
+    }
+  },
+  "2107": {
+    "model": "JBL Flip 7",
+    "formFactor": "cylinder",
+    "colors": {
+      "00": "dwf90f0f82/JBL_FLIP_7_HERO_BLACK_060_x2.png",
+      "01": "dwf90f0f82/JBL_FLIP_7_HERO_BLACK_060_x2.png",
+      "02": "dw68e4981d/JBL_FLIP_7_HERO_RED_071_x2.png",
+      "03": "dwad0b22ea/JBL_FLIP_7_HERO_BLUE_079_x1.png",
+      "04": "dw4519caa2/JBL_FLIP_7_HERO_WHITE_066_x1.png",
+      "08": "dwb5cb36d4/JBL_FLIP_7_HERO_SAND_076_x2.png",
+      "10": "dw3b5c0498/JBL_FLIP_7_HERO_PINK_068_x1.png",
+      "13": "dwf45a2daf/JBL_FLIP_7_HERO_SQUAD_054_x2.png",
+      "14": "dwa1a4a194/JBL_FLIP_7_HERO_PURPLE_079_x2.png",
+      "15": "dwb04e11a4/JBL_FLIP_7_HERO_FUNKY_BLACK_055_x2.png",
+      "18": "dw582e6b32/LS_JBL_FLIP_7_HERO_TURQUOISE_066_x2.png"
+    }
+  },
+  "214C": {
+    "model": "JBL Tuner 3",
+    "formFactor": "compact",
+    "colors": {
+      "00": "dwd1f28eca/LS_JBL_TUNER_3_BLACK_HERO_0091_x1.png",
+      "01": "dwd1f28eca/LS_JBL_TUNER_3_BLACK_HERO_0091_x1.png",
+      "04": "dwb97c0204/LS_JBL_TUNER_3_WHITE_HERO_0084_x1.png"
+    }
+  },
+  "218A": {
+    "model": "JBL Charge Essential 3 SE",
+    "formFactor": "cylinder",
+    "colors": {
+      "00": "dwcd30f7a0/JBL_CHARGE_ESSENTIAL_3SE_HERO_0010_x2.png"
+    }
+  },
+  "2185": {
+    "model": "JBL Flip Essential 3 SE",
+    "formFactor": "cylinder",
+    "colors": {
+      "00": "dw1d74815e/LS_JBL_FLIP_ESSENTIAL_3SE_HERO_0027_x1.png"
+    }
+  }
+}

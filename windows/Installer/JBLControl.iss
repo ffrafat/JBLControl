@@ -99,7 +99,7 @@ Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: 
 Filename: "{app}\{#AppExe}"; Description: "{cm:LaunchProgram,{#AppName}}"; Flags: nowait postinstall skipifsilent
 
 [UninstallDelete]
-; Cached speaker photos; settings stay in case it's reinstalled.
+; Speaker photos cached by older versions; settings stay in case it's reinstalled.
 Type: filesandordirs; Name: "{localappdata}\JBLControl\photos"
 
 [Code]

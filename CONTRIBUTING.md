@@ -27,12 +27,15 @@ Protocol work goes in `Sources/JBLControlKit/EQCodec.swift` (one case per protoc
 
 ## Add a speaker photo
 
-Photos are fetched from jbl.com at runtime, never committed. To add a model, open its page on jbl.com,
-copy the hero image paths for each color, and add them to `PhotoSources.table` in
-`Sources/JBLControl/PhotoStore.swift`, keyed by the color codes in the catalog.
+Both apps ship small (256 px) copies of JBL's product photos from `Resources/SpeakerPhotos`. To add a model
+or color, open its page on jbl.com, copy the hero image path (the `dw…/…HERO….png` part of the image
+address), add it to `scripts/speaker-photos.json` under the product ID and the color code from the catalog,
+then run `scripts/make-speaker-photos.py` (needs `brew install imagemagick pngquant`) and commit the result.
+Color code `00` is the fallback for colors without their own photo.
 
 ## Ground rules
 
 - Read-only by default: anything that writes to a speaker must be behind `canWrite`.
-- No JBL/Harman assets (photos, logos, firmware, APKs) in the repository.
+- No JBL/Harman assets (logos, firmware, APKs) in the repository, apart from the downsized product photos
+  in `Resources/SpeakerPhotos`.
 - `swift test` must pass.

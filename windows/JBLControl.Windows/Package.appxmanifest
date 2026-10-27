@@ -49,7 +49,7 @@
   <Capabilities>
     <!-- The Windows App SDK's packaged-but-full-trust (classic Win32) execution model. -->
     <rescap:Capability Name="runFullTrust" />
-    <!-- Checking for updates (GitHub) and fetching speaker photos (jbl.com). -->
+    <!-- Checking for updates (GitHub). -->
     <Capability Name="internetClient" />
     <!-- Connecting to the speaker's BLE GATT service; required for Windows.Devices.Bluetooth
          from inside the packaged app's sandbox (not needed by the unpackaged build). -->

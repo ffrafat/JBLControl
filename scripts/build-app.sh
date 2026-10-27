@@ -19,6 +19,8 @@ xcrun actool "$(pwd -P)/Resources/Assets.xcassets" "$(pwd -P)/Resources/AppIcon.
   --compile "$(pwd -P)/$APP/Contents/Resources" --platform macosx \
   --minimum-deployment-target 14.0 --app-icon AppIcon --accent-color AccentColor \
   --output-partial-info-plist "$(mktemp -d)/icon.plist" >/dev/null
+# Speaker photos (scripts/make-speaker-photos.py).
+cp -R Resources/SpeakerPhotos "$APP/Contents/Resources/SpeakerPhotos"
 # A real identity keeps the code requirement stable, so macOS remembers the Bluetooth
 # permission across rebuilds. Falls back to ad-hoc signing when none is available.
 # Release zips are signed ad-hoc: a development certificate would embed your name/email in a public download.

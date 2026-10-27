@@ -54,7 +54,7 @@
 
 <main><div class="wrap">
   <h1>Privacy Policy</h1>
-  <p class="updated">Last updated 2026-10-26.</p>
+  <p class="updated">Last updated 2026-10-27.</p>
 
   <p>JBLControl doesn't collect, store or share any personal data. There's no account, no sign-in and no analytics or tracking of any kind, on Mac or Windows.</p>
 
@@ -63,12 +63,11 @@
   <p>Your preferences (such as launch-at-login or your last-connected speaker) are stored only in your operating system's standard local settings (<code>UserDefaults</code> on Mac, the registry/local app data on Windows) and never transmitted anywhere.</p>
 
   <h2>What goes over the internet</h2>
-  <p>JBLControl makes network requests to exactly two places, both read-only and neither requiring any personal information:</p>
+  <p>JBLControl makes network requests to exactly one place, read-only and without any personal information:</p>
   <ul>
     <li><b>GitHub</b> (<code>api.github.com</code>) — to check whether a newer version is available. This is a standard anonymous HTTPS request; it doesn't send any identifying information beyond what any web request includes (e.g. your IP address, inherent to the internet).</li>
-    <li><b>jbl.com</b> — to download your speaker model's official product photo, so the app can show it. Only the model and color code are used to pick the right image.</li>
   </ul>
-  <p>Neither of these services is used for tracking or analytics, and JBLControl doesn't integrate any third-party analytics, advertising or tracking SDKs.</p>
+  <p>That check isn't used for tracking or analytics, and JBLControl doesn't integrate any third-party analytics, advertising or tracking SDKs. Speaker photos are included in the app; earlier versions downloaded them from jbl.com.</p>
 
   <h2>Diagnostics reports</h2>
   <p>If you choose <b>Copy Diagnostics</b> from the app's menu, it builds a text report (app version, speaker model, recent protocol traffic) and copies it to your clipboard — nothing is sent automatically. It's meant to be pasted into a GitHub issue you submit yourself, and the report already masks your speaker's MAC address and serial number before it's copied.</p>

@@ -103,7 +103,7 @@ finds it by itself.
 **Update:** quit JBLControl (⌘Q, or ••• → **Quit**), then install the new DMG the same way and choose **Replace**.
 
 **Uninstall:** quit it and drag JBLControl from Applications to the Trash. Optionally also delete
-`~/Library/Caches/io.github.jblcontrol` (cached speaker photos).
+`~/Library/Caches/io.github.jblcontrol` (speaker photos cached by older versions).
 
 ### Keep Awake
 
@@ -132,7 +132,7 @@ hasn't checked this build. It doesn't mean macOS found anything wrong with it.
 - **All the code is public** in this repository, and each release is built from it with
   `scripts/build-app.sh`. You can read it, or [build it yourself](#build-from-source).
 - **It doesn't need an account or any personal data.** It uses Bluetooth to talk to your speaker, plus the
-  internet only to check GitHub for new versions and to download speaker photos from jbl.com.
+  internet only to check GitHub for new versions.
 - **You can check that your download wasn't tampered with.** Each release lists SHA-256 checksums; in
   Terminal, `shasum -a 256 ~/Downloads/JBLControl-<version>.dmg` should print the same value.
 
@@ -288,7 +288,7 @@ Contributions of every size help:
   with the output of **Copy Diagnostics**. This is the most useful thing you can do: it's how models
   get verified. Reports from Windows are just as welcome.
 - **Code:** protocol work, new models, UI on either platform. See [CONTRIBUTING.md](CONTRIBUTING.md).
-- **Speaker photos:** add jbl.com image paths for your model (see [CONTRIBUTING.md](CONTRIBUTING.md#add-a-speaker-photo)).
+- **Speaker photos:** missing your model or color? See [CONTRIBUTING.md](CONTRIBUTING.md#add-a-speaker-photo).
 - **Bugs and ideas:** [open an issue](../../issues).
 
 ## Support the project
@@ -323,5 +323,5 @@ Third-party license texts are in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md
 [MIT](LICENSE).
 
 JBLControl is an independent project, not affiliated with, endorsed or sponsored by JBL or Harman
-International. JBL is a trademark of Harman International Industries, Incorporated. Speaker photos belong to
-Harman; they're downloaded from jbl.com at runtime and aren't part of this repository.
+International. JBL is a trademark of Harman International Industries, Incorporated. The speaker product photos
+included to identify each model are Harman's and remain their property.

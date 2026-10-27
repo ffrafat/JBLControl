@@ -1,0 +1,133 @@
+{
+ "1F31": {
+  "00": "jbl_flip5_front_fiesta-red_046_x1-1605x1605px_front.png"
+ },
+ "202F": {
+  "00": "jbl_xtreme_3_hero_blue_0031_x1.png",
+  "03": "jbl_xtreme_3_hero_blue_0031_x1.png",
+  "08": "jbl_xtreme_3_hero_camo_0032_x1.png"
+ },
+ "2040": {
+  "00": "jbl_charge5_hero_black_0046_x1.png",
+  "01": "jbl_charge5_hero_black_0046_x1.png",
+  "02": "jbl_charge5_hero_red_0029_x2.png",
+  "03": "jbl_charge5_hero_blue_0038_x3.png",
+  "05": "jbl_charge5_hero_green_0025_x2.png",
+  "07": "jbl_charge5_hero_grey_0014_x1.png",
+  "09": "jbl_charge5_hero_teal_0023_x2.png",
+  "10": "jbl_charge5_hero_pink_0041_x2.png",
+  "13": "jbl_charge5_hero_camo_0049_x2.png"
+ },
+ "204F": {
+  "00": "1_jbl_flip6_hero_black_29391_x2.png",
+  "01": "1_jbl_flip6_hero_black_29391_x2.png",
+  "02": "1_jbl_flip6_hero_red_29399_x1.png",
+  "03": "1_jbl_flip6_hero_blue_29399_x1.png",
+  "04": "1_jbl_flip6_hero_white_29399_x1.png",
+  "05": "1_jbl_flip6_hero_green_29399_x1.png",
+  "07": "1_jbl_flip6_hero_grey_29399_x1.png",
+  "09": "1_jbl_flip6_hero_teal_29399_x1.png",
+  "10": "1_jbl_flip6_hero_pink_29399_x1.png",
+  "13": "jbl_flip6_squad_hero_31828_x1.png"
+ },
+ "206D": {
+  "00": "1_jbl_boombox_3_squad_hero_33262_x2.png",
+  "08": "1_jbl_boombox_3_squad_hero_33262_x2.png"
+ },
+ "20DC": {
+  "00": "jbl_xtreme_4_hero_camo_47142_x2_v2.png",
+  "03": "jbl_xtreme_4_hero_blue_47139_x4_1.png",
+  "12": "jbl_xtreme_4_tomorrowland_hero_52861_x1.png",
+  "13": "jbl_xtreme_4_hero_camo_47142_x2_v2.png"
+ },
+ "20E3": {
+  "00": "ls_jbl_charge_6_black_hero_071_x1.png",
+  "01": "ls_jbl_charge_6_black_hero_071_x1.png",
+  "02": "jbl_charge_6_red_hero_070_x1.png",
+  "03": "ls_jbl_charge_6_blue_hero_079_x1.png",
+  "04": "jbl_charge_6_white_hero_080_x1.png",
+  "08": "jbl_charge_6_sand_hero_077_x2.png",
+  "10": "ls_jbl_charge_6__pink_hero_075_x1.png",
+  "14": "jbl_charge_6_purple_hero_078_x1.png",
+  "16": "jbl_charge_6_squad_hero_074_x1.png",
+  "17": "jbl_charge_6_funky_black_hero_081_x1.png",
+  "18": "ls_jbl_charge_6_turquoise_hero_080_x2.png"
+ },
+ "20E4": {
+  "00": "jbl_go_4_hero_black_48156_x4.png",
+  "01": "jbl_go_4_hero_black_48156_x4.png",
+  "03": "jbl_go_4_hero_blue_48170_x6.png"
+ },
+ "20F5": {
+  "00": "jbl_clip_5_hero_black_48128_x6.png",
+  "01": "jbl_clip_5_hero_black_48128_x6.png",
+  "02": "jbl_clip_5_hero_red_48132_x4.png",
+  "03": "jbl_clip_5_hero_blue_48143_x5.png",
+  "10": "jbl_clip_5_hero_pink_49706_x3.png",
+  "13": "jbl_clip_5_hero_camo_48148_x5.png",
+  "14": "jbl_clip_5_hero_purple_48139_x5.png",
+  "15": "jbl_clip_5_hero_black_orange_49704_x3.png"
+ },
+ "2107": {
+  "00": "jbl_flip_7_hero_black_060_x2.png",
+  "01": "jbl_flip_7_hero_black_060_x2.png",
+  "02": "jbl_flip_7_hero_red_071_x2.png",
+  "03": "jbl_flip_7_hero_blue_079_x1.png",
+  "04": "jbl_flip_7_hero_white_066_x1.png",
+  "08": "jbl_flip_7_hero_sand_076_x2.png",
+  "10": "jbl_flip_7_hero_pink_068_x1.png",
+  "13": "jbl_flip_7_hero_squad_054_x2.png",
+  "14": "jbl_flip_7_hero_purple_079_x2.png",
+  "15": "jbl_flip_7_hero_funky_black_055_x2.png",
+  "18": "ls_jbl_flip_7_hero_turquoise_066_x2.png"
+ },
+ "210A": {
+  "00": "jbl_go_4_hero_black_48156_x4.png",
+  "01": "jbl_go_4_hero_black_48156_x4.png",
+  "03": "jbl_go_4_hero_blue_48170_x6.png"
+ },
+ "2132": {
+  "00": "ls_jbl_grip_black_hero__0026_x3.png",
+  "01": "ls_jbl_grip_white_hero__0026_x2.png",
+  "02": "ls_jbl_grip_blue_hero__0026_x3.png",
+  "03": "ls_jbl_grip_red_hero_0026_x3.png",
+  "05": "ls_jbl_grip_purple_hero__0026_x3.png",
+  "19": "ls_jbl_grip_pink_hero__0026_x3.png",
+  "1A": "ls_jbl_grip_squad_hero__0027_x1.png"
+ },
+ "214C": {
+  "00": "ls_jbl_tuner_3_black_hero_0091_x1.png",
+  "01": "ls_jbl_tuner_3_black_hero_0091_x1.png",
+  "04": "ls_jbl_tuner_3_white_hero_0084_x1.png"
+ },
+ "214E": {
+  "00": "ls_jbl_boombox_4_hero_black_0019_x4.png",
+  "01": "ls_jbl_boombox_4_hero_white_0019_x4.png",
+  "02": "ls_jbl_boombox_4_hero_blue_0019_x4.png",
+  "14": "ls_jbl_boombox_4_brown_hero_63284_x3.png",
+  "1A": "ls_jbl_boombox_4_hero_camo_0019_x3.png",
+  "1F": "ls_jbl_boombox_4_orange_hero_63284_x3.png"
+ },
+ "2168": {
+  "00": "ls_jbl_go5_hero_black_0007_x4.png",
+  "01": "ls_jbl_go5_hero_white_0007_x3.png",
+  "02": "ls_jbl_go5_hero_blue_0007_x4.png",
+  "03": "ls_jbl_go5_hero_red_0007_x4.png",
+  "05": "ls_jbl_go5_hero_purple_0007_x4.png",
+  "18": "ls_jbl_go5_hero_yellow_0007_x4.png",
+  "19": "ls_jbl_go5_hero_pink_0007_x4.png",
+  "1A": "ls_jbl_go5_hero_squad_0010_x4.png",
+  "1B": "ls_jbl_go5_hero_turquoise_0007_x4.png",
+  "1C": "ls_jbl_go5_hero_orange_0007_x4.png"
+ },
+ "2169": {
+  "00": "ls_jbl_xtreme_5_hero_squad_0028_x5.png",
+  "1A": "ls_jbl_xtreme_5_hero_squad_0028_x5.png"
+ },
+ "2185": {
+  "00": "ls_jbl_flip_essential_3se_hero_0027_x1.png"
+ },
+ "218A": {
+  "00": "jbl_charge_essential_3se_hero_0010_x2.png"
+ }
+}

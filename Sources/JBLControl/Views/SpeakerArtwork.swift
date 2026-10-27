@@ -22,8 +22,6 @@ struct SpeakerArtwork: View {
                     .resizable()
                     .interpolation(.high)
                     .scaledToFit()
-                    // Photos are upright; cylinder speakers sit on their side.
-                    .rotationEffect(.degrees(model?.formFactor == .cylinder ? 90 : 0))
                     .scaleEffect(model?.formFactor == .cylinder ? 1.15 : 0.9)
                     .shadow(color: .black.opacity(0.35), radius: 8, y: 6)
             } else {
@@ -32,8 +30,7 @@ struct SpeakerArtwork: View {
             }
         }
         .task(id: "\(model?.productID ?? 0)-\(colorCode ?? 0)") {
-            photo = nil
-            if let model { photo = await PhotoStore.shared.photo(for: model.productID, color: colorCode ?? 0) }
+            photo = model.flatMap { PhotoStore.shared.photo(for: $0.productID, color: colorCode ?? 0) }
         }
     }
 }

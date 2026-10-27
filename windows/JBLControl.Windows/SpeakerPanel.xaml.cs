@@ -322,7 +322,7 @@ internal static class Glyphs
 /// </summary>
 internal static class SpeakerArtwork
 {
-    /// <summary>Shows the silhouette right away, then swaps in the photo once it's cached or downloaded.</summary>
+    /// <summary>Shows the silhouette right away, then swaps in the photo once it's loaded.</summary>
     /// <param name="stillWanted">Whether the photo is still for what's on screen when it arrives.</param>
     public static async void Fill(Grid host, SpeakerModel? model, byte? colorCode, Func<bool> stillWanted)
     {
@@ -377,10 +377,8 @@ internal static class SpeakerArtwork
                 Source = photo,
                 Stretch = Stretch.Uniform,
                 RenderTransformOrigin = new Point(0.5, 0.5),
-                // Photos are upright; cylinder speakers sit on their side.
                 RenderTransform = new CompositeTransform
                 {
-                    Rotation = cylinder ? 90 : 0,
                     ScaleX = cylinder ? 1.15 : 0.9,
                     ScaleY = cylinder ? 1.15 : 0.9,
                 },

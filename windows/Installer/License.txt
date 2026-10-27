@@ -44,5 +44,5 @@ projects (MIT); see licenses\THIRD_PARTY_NOTICES.md.
 
 JBLControl is an independent project, not affiliated with, endorsed or
 sponsored by JBL, Harman International or Microsoft. JBL is a trademark of
-Harman International Industries, Incorporated. Speaker photos belong to Harman;
-they're downloaded from jbl.com at runtime and aren't part of this download.
+Harman International Industries, Incorporated. The speaker product photos
+included to identify each model are Harman's and remain their property.

@@ -14,7 +14,12 @@ Written 2026-10-27 so work can continue on another machine. Delete this file onc
 
 ## Open work
 
-1. **Speaker photos.** Only the Flip 7 has a photo (`PhotoSources` in `windows/JBLControl.Windows/PhotoStore.cs`
+1. **Speaker photos: done (2026-10-27), not yet released.** Photos are now bundled in `Resources/SpeakerPhotos`
+   (81 photos at 256 px, 1.3 MB) for 18 product IDs, built by `scripts/make-speaker-photos.py` from
+   `scripts/speaker-photos.json`; both apps read `index.json` and no longer go online for photos. Cylinder
+   photos are pre-rotated, so the apps don't rotate them. Not on jbl.com any more (placeholder stays): Pulse
+   3/4/5, Boombox 1/2, Charge 3/4, Flip 3/4, Xtreme 1/2, Go 4 Duo, Charge 5 Wi-Fi, Boombox 3 Wi-Fi. The Windows
+   side was not built locally (no .NET on the Mac); check CI. Old notes, for reference: only the Flip 7 had a photo (`PhotoSources` in `windows/JBLControl.Windows/PhotoStore.cs`
    and `Sources/JBLControl/PhotoStore.swift`); every other model shows the drawn placeholder. This is GitHub
    issue 2 (Charge 5 "icon wrong") and a Reddit comment about the Charge 6 image. Add the paths to both tables.
    - Photos are fetched from the JBL image CDN at runtime and cached. Do not commit the images
