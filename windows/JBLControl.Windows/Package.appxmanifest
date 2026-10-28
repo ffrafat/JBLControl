@@ -9,6 +9,12 @@
 
   Version's 4th segment is reserved by the Store and must stay 0; scripts/build-windows.ps1's -Msix
   flag rewrites the first three segments from Resources/Info.plist before packaging.
+
+  DisplayName is "Speaker Control for JBL", not "JBLControl", per Store certification policy 10.1.1.1
+  (Inaccurate Representation): a referential app's title can't start with the referenced brand's name,
+  since that could look like an official JBL product. This is a Store-listing-only rename - the app's
+  actual name (exe, Start menu shortcut, window titles, tray tooltip) stays "JBLControl" everywhere else
+  (direct-download installer/zip, GitHub, website, Mac app). See windows/PORT_PLAN.md.
 -->
 <Package
   xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
@@ -19,10 +25,10 @@
   <Identity
     Name="FaisalFRafat.JBLControl"
     Publisher="CN=4858B90F-B025-495F-9206-5CF53DF31D9E"
-    Version="0.8.0.0" />
+    Version="0.9.0.0" />
 
   <Properties>
-    <DisplayName>JBLControl</DisplayName>
+    <DisplayName>Speaker Control for JBL</DisplayName>
     <PublisherDisplayName>Faisal F Rafat</PublisherDisplayName>
     <Logo>Assets\Store\StoreLogo.png</Logo>
   </Properties>
@@ -38,8 +44,8 @@
   <Applications>
     <Application Id="App" Executable="$targetnametoken$.exe" EntryPoint="$targetentrypoint$">
       <uap:VisualElements
-        DisplayName="JBLControl"
-        Description="JBL speaker control, right in your system tray."
+        DisplayName="Speaker Control for JBL"
+        Description="Speaker control for JBL Bluetooth speakers, right in your system tray."
         BackgroundColor="transparent"
         Square150x150Logo="Assets\Store\Square150x150Logo.png"
         Square44x44Logo="Assets\Store\Square44x44Logo.png" />
