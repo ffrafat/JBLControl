@@ -81,8 +81,8 @@ struct SpeakerSettings: View {
             KeepAwakeSection()
             Section {
                 Toggle(isOn: $speaker.allowExperimentalWrites) {
-                    Text("Allow experimental EQ")
-                    Text("Lets EQ changes through on models not yet confirmed on real hardware.")
+                    Text("Allow experimental controls")
+                    Text("Lets EQ and Auracast changes through on models not yet confirmed on real hardware.")
                 }
             } header: {
                 Text("Equalizer")

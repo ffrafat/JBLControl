@@ -89,6 +89,40 @@ public class CodecTests
     }
 
     [Fact]
+    public void Go4PresetSelectSendsBiquadCoefficients()
+    {
+        // Captured on a real Go 4: JBL's DefaultPresetEQPayload frame for Signature,
+        // answered by AA 99 ... 06 ... (active = 06).
+        var go4 = Catalog.Model(0x210A)!;
+        var signature = go4.Presets.First(p => p.Category == 0x06);
+        var frame = new EQCodec(go4).Select(signature, Array.Empty<float>()).Single();
+        var expected = Bytes("AA 97 00 65 06 00 00 00 20 62 ED 6B C0 9F 77 95 1F 9F 12 94 3F 62 88 6A E0 " +
+            "00 00 00 20 8C 57 6F C4 F4 3C 14 1C 75 A8 90 3B 0D C3 EB E3 " +
+            "00 00 00 20 AC 9B 43 C9 0F B2 AA 18 55 64 BC 36 F2 4D 55 E7 " +
+            "00 00 00 20 B7 CC 1A E4 25 B4 D2 0D 4A 33 E5 1B DC 4B 2D F2 " +
+            "00 00 00 20 F1 86 D4 F4 FC 26 28 0B 10 79 2B 0B 05 D9 D7 F4");
+        // Header and category are exact; a coefficient may drift by a few LSBs
+        // between platforms' tan/sqrt implementations, which the firmware accepts.
+        Assert.Equal(expected.Take(5), frame.Take(5));
+        Assert.Equal(expected.Length, frame.Length);
+        for (int i = 5; i + 3 < expected.Length; i += 4)
+        {
+            int wanted = BitConverter.ToInt32(expected, i);
+            int actual = BitConverter.ToInt32(frame, i);
+            Assert.InRange(actual, wanted - 2048, wanted + 2048);
+        }
+    }
+
+    [Fact]
+    public void Xtreme4PresetsAreNotImplementedYet()
+    {
+        var xtreme4 = Catalog.Model(0x20DC)!;
+        Assert.False(xtreme4.SupportsPresets);
+        Assert.Equal(new[] { "Custom" }, xtreme4.PickerPresets.Select(p => p.Name));
+        Assert.Empty(new EQCodec(xtreme4).Select(xtreme4.Presets[0], Array.Empty<float>()));
+    }
+
+    [Fact]
     public void LegacySimpleWriteAndReply()
     {
         var model = Catalog.Model(0x2040)!;

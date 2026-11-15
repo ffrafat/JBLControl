@@ -37,6 +37,27 @@ final class SpeakerManager: NSObject {
     private(set) var isCharging = false
     private(set) var firmware: String?
     private(set) var eq: EQSnapshot?
+    /// Every info token the speaker has reported, raw: token id to value bytes.
+    private(set) var infoTokens: [UInt8: [UInt8]] = [:]
+    /// Link mode from `AA 6B`, or the mode we last asked for: Auracast, PartyBoost or off.
+    private(set) var linkMode: LinkMode?
+    /// Token 3C, the older "Play Together" bit. Kept as a fallback for models that don't answer 0x6A.
+    private(set) var playTogether: Bool?
+    /// Token 46: this unit's half of a stereo pair.
+    private(set) var channel: AudioChannel?
+    /// Role from `AA 6B` / `AA 16`: normal, broadcasting or receiving.
+    private(set) var role: DeviceRole?
+    /// Token 49: the chosen half is locked.
+    private(set) var stereoLock: Bool?
+    /// Token 4C: the model itself says it supports Auracast.
+    private(set) var auracastSupportedToken: Bool?
+    /// Token 45: how many units the speaker believes are linked.
+    private(set) var linkedDevices: Int?
+    /// `AA A2`: the stereo/party group this unit is in, when it reports one.
+    private(set) var auracastGroup: AuracastGroup?
+    /// The channel we wrote and the speaker ACKed. Token 46 reads back 0 outside a
+    /// group, so it must not overwrite this.
+    @ObservationIgnored private var pendingChannel: AudioChannel?
     /// Last known custom curve; survives replies that don't carry it.
     private(set) var customGains: [Float] = []
     private(set) var traffic: [TrafficEntry] = []
@@ -49,6 +70,32 @@ final class SpeakerManager: NSObject {
     var activePreset: EQPreset? { eq.flatMap { e in model?.pickerPresets.first { $0.category == e.activeCategory } } }
     var isCustomActive: Bool { eq != nil && eq?.activeCategory == model?.customCategory }
     var canWrite: Bool { model.map { !$0.writesNeedOptIn || allowExperimentalWrites } ?? false }
+    /// Whether this speaker can join an Auracast broadcast, from the model table or its own tokens.
+    var supportsAuracast: Bool {
+        if model?.hasAuracast == true || auracastSupportedToken == true { return true }
+        return linkMode != nil || playTogether != nil
+    }
+
+    /// Whether left/right is ours to choose. AirTouch pairs decide it themselves.
+    var canSetChannel: Bool { model?.hasStereoChannel ?? (channel != nil) }
+
+    /// Auracast (or another multi-speaker mode) is on. Token 3C and the link role are
+    /// there for firmware that never answers `AA 6A`.
+    var isAuracastOn: Bool {
+        if linkMode == .auracast { return true }
+        if linkMode == .off { return false }
+        if role == .master || role == .slave { return true }
+        return playTogether == true
+    }
+
+    /// The channel to show: prefer what the group reply says, fall back to token 46.
+    var stereoChannel: AudioChannel? { auracastGroup?.channel ?? channel }
+
+    /// Another nearby unit of the same model, so the two halves of a pair can be set in turn.
+    var otherUnit: DiscoveredSpeaker? {
+        guard let model, model.hasAuracast else { return nil }
+        return discovered.first { $0.id != activeID && $0.model?.name == model.name }
+    }
     var connectedID: UUID? { status == .connected ? peripheral?.identifier : nil }
     /// Advertised name of the speaker currently being connected to.
     var connectingName: String? { discovered.first { $0.id == peripheral?.identifier }?.name }
@@ -131,7 +178,69 @@ final class SpeakerManager: NSObject {
 
     func refresh() {
         guard status == .connected else { return }
-        enqueue([Frame.requestInfo.encoded] + (codec?.readRequests() ?? []))
+        enqueue([Frame.requestInfo.encoded] + tokenRequests + auracastRequests + (codec?.readRequests() ?? []))
+    }
+
+    /// Group status is only worth asking for on a model that can hold one.
+    private var auracastRequests: [Data] {
+        guard model?.hasAuracast == true else { return [] }
+        if model?.family.usesProtocol4 == true {
+            return P4Message.get([P4Party.auracastMode, P4Party.channel, P4Party.status,
+                                  P4Party.groupType, P4Party.role, P4Party.groupID]).packets
+        }
+        return [Frame.requestLinkRole.encoded, Frame.requestAuracastGroup.encoded]
+    }
+
+    /// Tokens we ask for by name: the info burst does not always include them.
+    private var tokenRequests: [Data] {
+        [Frame.requestToken(InfoTokenID.auracast).encoded,
+         Frame.requestToken(InfoTokenID.audioChannel).encoded,
+         Frame.requestToken(InfoTokenID.stereoLock).encoded,
+         Frame.requestToken(InfoTokenID.auracastSupport).encoded]
+    }
+
+    /// Turn Auracast on or off (`AA 6A 01 02` / `AA 6A 01 00`), the same switch JBL's app uses.
+    ///
+    /// It does not create the pair by itself: the two Go 4s join each other on the speakers
+    /// (the Auracast button on both, or AirTouch on a Duo). This is what flips a unit into
+    /// broadcast mode so the second one can receive it.
+    func setAuracast(_ on: Bool) {
+        guard status == .connected, supportsAuracast, canWrite else { return }
+        let mode: LinkMode = on ? .auracast : .off
+        linkMode = mode
+        if model?.family.usesProtocol4 == true {
+            enqueue(P4Message.set([(P4Party.auracastMode, [on ? 0x01 : 0x00])]).packets)
+        } else {
+            enqueue([Frame.setLinkMode(mode).encoded])
+        }
+    }
+
+    /// Choose this unit's half of the pair (`AA 15 03 00 46 <0|1|2>`).
+    func setChannel(_ channel: AudioChannel) {
+        guard status == .connected, canSetChannel, canWrite else { return }
+        self.channel = channel
+        pendingChannel = channel
+        if model?.family.usesProtocol4 == true {
+            enqueue(P4Message.set([(P4Party.channel, [channel.rawValue])]).packets)
+        } else {
+            enqueue([Frame.setAudioChannel(channel).encoded])
+        }
+    }
+
+    /// Flip left and right on the unit we're connected to.
+    func swapChannel() {
+        setChannel((stereoChannel ?? .mono).swapped)
+    }
+
+    /// Ask for the role and group status again (read-only).
+    func refreshAuracastGroup() {
+        guard status == .connected else { return }
+        enqueue(auracastRequests)
+    }
+
+    /// Ask the speaker to re-send one info token (read-only).
+    func readToken(_ token: UInt8) {
+        enqueue([Frame.requestToken(token).encoded])
     }
 
     func select(_ preset: EQPreset) {
@@ -251,6 +360,9 @@ final class SpeakerManager: NSObject {
     /// Forget what the last speaker reported, so none of it shows for whichever speaker connects next.
     private func clearDeviceInfo() {
         name = nil; colorCode = nil; battery = nil; isCharging = false; firmware = nil; eq = nil
+        infoTokens = [:]
+        linkMode = nil; playTogether = nil; channel = nil; role = nil; stereoLock = nil
+        auracastSupportedToken = nil; linkedDevices = nil; auracastGroup = nil; pendingChannel = nil
     }
 
     private func clearDeviceState() {
@@ -320,6 +432,7 @@ final class SpeakerManager: NSObject {
     // MARK: Incoming
 
     private func handle(_ message: Incoming) {
+        if case .p4(let p4) = message { handleP4Party(p4) }
         if let codec, let snapshot = codec.parse(message) {
             let superseded = eqNext != nil
             if eqInFlight { eqWriteFinished() }
@@ -334,14 +447,43 @@ final class SpeakerManager: NSObject {
         switch Command(rawValue: frame.command) {
         case .info:
             guard let token = InfoToken.parse(frame.payload) else { return }
+            if frame.payload.count >= 3, frame.payload[1] != 0x48, frame.payload[1] != 0xC2 {
+                infoTokens[frame.payload[1]] = Array(frame.payload.dropFirst(2))
+            }
             switch token {
             case .name(let n): name = n
             case .productID(let pid): setProductID(pid)
             case .color(let c): colorCode = c
             case .battery(let level, let charging): batteryChanged(level, charging: charging)
             case .firmware(let f): firmware = f
+            case .auracast(let value): playTogether = value != 0
+            case .audioChannel(let c):
+                // Outside a group the firmware reports 00 even after an ACKed write.
+                if c != .mono || pendingChannel == nil || pendingChannel == .mono {
+                    channel = c
+                    if c != .mono { pendingChannel = nil }
+                }
+            case .stereoLock(let locked): stereoLock = locked
+            case .auracastSupport(let supported): auracastSupportedToken = supported
+            case .linkedDevices(let count): linkedDevices = count
             default: break
             }
+        case .linkMode:
+            // AA 6B 01 <role>: the answer to our 6A write.
+            if let value = frame.payload.first { role = DeviceRole(roleValue: value) }
+        case .linkRole:
+            if let value = frame.payload.first { role = DeviceRole(roleValue: value) }
+        case .auracastGroup:
+            guard !frame.payload.isEmpty else {
+                // An empty AA A2 means this unit is not in a group.
+                auracastGroup = nil
+                break
+            }
+            let group = AuracastGroup(payload: frame.payload)
+            auracastGroup = group
+            if let c = group.channel { channel = c; pendingChannel = c }
+            if let r = group.role { role = r }
+            if group.action == .destroy { auracastGroup = nil; channel = .mono; pendingChannel = .mono }
         case .version:
             firmware = FirmwareVersion.format(frame.payload)
         case .notifyEQChange:
@@ -352,6 +494,23 @@ final class SpeakerManager: NSObject {
         default:
             break
         }
+    }
+
+    /// Protocol 4 carries Auracast and the stereo half as features, not AA frames.
+    private func handleP4Party(_ message: P4Message) {
+        if let value = message.features[P4Party.auracastMode]?.first {
+            linkMode = value == 0 ? .off : .auracast
+        }
+        if let value = message.features[P4Party.channel]?.first, let channel = AudioChannel(channel: value) {
+            self.channel = channel
+        }
+        guard message.features[P4Party.status] != nil || message.features[P4Party.groupType] != nil else { return }
+        var group = auracastGroup ?? AuracastGroup()
+        if let value = message.features[P4Party.groupType]?.first { group.type = AuracastGroupType(rawValue: value) }
+        if let value = message.features[P4Party.role]?.first { group.role = DeviceRole(roleValue: value) }
+        if let value = message.features[P4Party.channel]?.first { group.channel = AudioChannel(channel: value) }
+        if let id = message.features[P4Party.groupID] { group.groupID = id }
+        auracastGroup = group
     }
 
     /// Whether a sighting is the speaker we're already connected to, under another address.
@@ -403,7 +562,7 @@ final class SpeakerManager: NSObject {
         enqueue([
             Frame.requestInfo.encoded, Frame.requestVersion.encoded, Frame(0x61).encoded,
             Frame(0x6C, [0x00]).encoded, Frame.requestEQ.encoded,
-        ] + P4Message.set([(P4EQ.query, [0xFF])]).packets)
+        ] + auracastRequests + P4Message.set([(P4EQ.query, [0xFF])]).packets)
         try? await Task.sleep(for: .seconds(3))
     }
 
@@ -541,7 +700,7 @@ extension SpeakerManager: @preconcurrency CBPeripheralDelegate {
         log.info("control channel ready")
         decoder = MessageDecoder()
         status = .connected
-        enqueue([Frame.requestInfo.encoded, Frame.requestVersion.encoded] + (codec?.readRequests() ?? []))
+        enqueue([Frame.requestInfo.encoded, Frame.requestVersion.encoded] + tokenRequests + auracastRequests + (codec?.readRequests() ?? []))
         startPolling()
     }
 

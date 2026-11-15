@@ -114,6 +114,32 @@ public struct EQBandSpec: Sendable, Equatable {
     }
 }
 
+/// The multi-speaker capabilities the JBL app's model table declares.
+/// None of them changes the AA framing; they decide which controls make sense.
+public struct ModelFeatures: Sendable, Equatable {
+    /// `AURACAST_SUPPORT`: the unit can join or start an Auracast broadcast.
+    public var auracast: Bool
+    /// `NON_PARTY_BOOST_SUPPORT` / `PARTYBOOST_BUTTON_SUPPORT`: the older PartyBoost link.
+    public var partyBoost: Bool
+    /// `LONG_LASTING_STEREO`: the pair survives a power cycle.
+    public var longLastingStereo: Bool
+    /// `AIR_TOUCH_STEREO`: the Duo picks its own halves when bumped together.
+    public var airTouchStereo: Bool
+    /// The models JBL's app drives with its newer stereo flow (Go 4 Actions, Xtreme 4, Flip 7, Charge 6).
+    public var newStereoFlow: Bool
+
+    public init(auracast: Bool = false, partyBoost: Bool = false, longLastingStereo: Bool = false,
+                airTouchStereo: Bool = false, newStereoFlow: Bool = false) {
+        self.auracast = auracast
+        self.partyBoost = partyBoost
+        self.longLastingStereo = longLastingStereo
+        self.airTouchStereo = airTouchStereo
+        self.newStereoFlow = newStereoFlow
+    }
+
+    public static let none = ModelFeatures()
+}
+
 public struct SpeakerModel: Sendable, Identifiable {
     public let productID: UInt16
     public let name: String
@@ -122,10 +148,12 @@ public struct SpeakerModel: Sendable, Identifiable {
     public let formFactor: FormFactor
     public let presets: [EQPreset]
     public let colors: [UInt8: SpeakerColor]
+    public let features: ModelFeatures
     public var id: UInt16 { productID }
 
     public init(productID: UInt16, name: String, family: ProtocolFamily, support: SupportLevel,
-                formFactor: FormFactor, presets: [EQPreset], colors: [UInt8: SpeakerColor]) {
+                formFactor: FormFactor, presets: [EQPreset], colors: [UInt8: SpeakerColor],
+                features: ModelFeatures = .none) {
         self.productID = productID
         self.name = name
         self.family = family
@@ -133,6 +161,7 @@ public struct SpeakerModel: Sendable, Identifiable {
         self.formFactor = formFactor
         self.presets = presets
         self.colors = colors
+        self.features = features
     }
 
     public func color(_ code: UInt8?) -> SpeakerColor {
@@ -145,12 +174,35 @@ public struct SpeakerModel: Sendable, Identifiable {
     public var customCategory: UInt8 { family == .legacyParametric ? 0xC2 : 0xC1 }
 
     /// Presets the picker offers: the model's own, then Custom.
+    ///
+    /// A 3-band (simple EQ) model has no preset table in the JBL app, but its
+    /// firmware still carries JBL Signature as category `01`; selecting it is
+    /// `AA 6E 02 01 00`, the same frame the app sends.
     public var pickerPresets: [EQPreset] {
         guard hasEQ else { return [] }
-        return presets + [EQPreset(category: customCategory, name: "Custom", bands: [])]
+        let custom = EQPreset(category: customCategory, name: "Custom", bands: [])
+        guard supportsPresets else { return [custom] }
+        if family == .legacySimple, !presets.contains(where: { $0.category == 0x01 }) {
+            return [EQPreset(category: 0x01, name: "Signature", bands: [])] + presets + [custom]
+        }
+        return presets + [custom]
     }
 
+    /// Whether JBL's preset payload for this model is implemented.
+    /// Xtreme 4 uses a different (AKM) coefficient encoder that isn't ported yet.
+    public var supportsPresets: Bool { !(family == .legacyLevels && productID == 0x20DC) }
+
     public var hasEQ: Bool { family != .infoOnly && support != .unsupported }
+
+    /// The unit can join or start an Auracast broadcast.
+    public var hasAuracast: Bool { features.auracast }
+
+    /// Left/right can be chosen over the control channel. AirTouch models decide
+    /// it themselves when the two units are bumped together.
+    public var hasStereoChannel: Bool { features.auracast && !features.airTouchStereo }
+
+    /// The two halves are chosen by AirTouch, not by an `AA 15` write.
+    public var stereoIsAutomatic: Bool { features.airTouchStereo }
 
     /// Writes are allowed without opting in only where they have been confirmed on hardware.
     public var writesNeedOptIn: Bool { support != .verified }

@@ -94,6 +94,14 @@ struct SpeakerControls: View {
             } else if speaker.status == .connected {
                 NoEQNotice()
             }
+            if connected, let model = speaker.model, model.hasAuracast {
+                AuracastControls()
+                    .transition(.opacity)
+            }
+            if connected, let model = speaker.model, model.hasEQ, !speaker.canWrite {
+                ExperimentalNotice(model: model)
+                    .transition(.opacity)
+            }
         }
         .animation(.smooth, value: showSwitcher)
         .animation(.smooth(duration: 0.3), value: connected)
@@ -106,6 +114,31 @@ struct SpeakerControls: View {
                 try? await Task.sleep(for: .seconds(1))
             }
         }
+    }
+}
+
+/// Explains why the presets and sliders do nothing on a model nobody has confirmed on hardware yet.
+struct ExperimentalNotice: View {
+    @Environment(SpeakerManager.self) private var speaker
+    let model: SpeakerModel
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "lock")
+                .font(.caption)
+            Text("EQ changes are off for \(model.shortName) until someone confirms them on the speaker.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 8)
+            Button("Enable") { speaker.allowExperimentalWrites = true }
+                .font(.caption.weight(.semibold))
+                .adaptiveGlassButtonStyle()
+                .controlSize(.small)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .adaptiveGlass(.regular, in: .rect(cornerRadius: 16))
     }
 }
 
@@ -193,6 +226,35 @@ enum MoreMenu {
         awake.state = keepAwake.isEnabled ? .on : .off
         awake.toolTip = "Stops the speaker's auto power-off while it's your Mac's sound output."
         menu.addItem(awake)
+        if speaker.supportsAuracast {
+            let auracast = ActionItem(speaker.isAuracastOn ? "Turn Auracast Off" : "Turn Auracast On",
+                                      symbol: "antenna.radiowaves.left.and.right") {
+                speaker.setAuracast(!speaker.isAuracastOn)
+            }
+            auracast.state = speaker.isAuracastOn ? .on : .off
+            auracast.isEnabled = speaker.canWrite
+            auracast.toolTip = speaker.canWrite
+                ? "Switch this speaker's Auracast broadcast on or off (the pair itself is made on the speakers)."
+                : "Enable experimental controls in Settings first."
+            menu.addItem(auracast)
+            if speaker.canSetChannel {
+                let channelItem = NSMenuItem(title: "Stereo Channel", action: nil, keyEquivalent: "")
+                channelItem.image = NSImage(systemSymbolName: "speaker.wave.2", accessibilityDescription: nil)
+                let submenu = NSMenu()
+                for channel in AudioChannel.allCases {
+                    let item = ActionItem(channel.label, symbol: nil) { speaker.setChannel(channel) }
+                    item.state = speaker.stereoChannel == channel ? .on : .off
+                    item.isEnabled = speaker.canWrite
+                    submenu.addItem(item)
+                }
+                submenu.addItem(.separator())
+                let swap = ActionItem("Swap Left and Right", symbol: nil) { speaker.swapChannel() }
+                swap.isEnabled = (speaker.stereoChannel ?? .mono) != .mono && speaker.canWrite
+                submenu.addItem(swap)
+                channelItem.submenu = submenu
+                menu.addItem(channelItem)
+            }
+        }
         menu.addItem(.separator())
         menu.addItem(ActionItem("Settings…", symbol: "gearshape", key: ",") { open(.settings) })
 

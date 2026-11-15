@@ -57,6 +57,24 @@ public struct P4Message: Equatable, Sendable {
 
 private func le16(_ v: UInt16) -> [UInt8] { [UInt8(v & 0xFF), UInt8(v >> 8)] }
 
+/// Protocol 4's multi-speaker features (`DeviceFeature` in JBL's app).
+///
+/// Protocol 4 models (Boombox 4, Xtreme 5, Grip, Go 5) carry Auracast and the
+/// stereo channel as features instead of the legacy `AA 6A` / `AA 15` frames.
+public enum P4Party {
+    /// 8196: 0 off, 1 on. JBL's app sends only 0/1 here, unlike the legacy link mode's 0/1/2.
+    public static let auracastMode: UInt16 = 0x2004
+    public static let status: UInt16 = 0x2C00
+    public static let groupType: UInt16 = 0x2C01
+    public static let connection: UInt16 = 0x2C02
+    public static let role: UInt16 = 0x2C03
+    public static let channel: UInt16 = 0x2C04
+    public static let groupName: UInt16 = 0x2C05
+    public static let groupID: UInt16 = 0x2C06
+    public static let groupAction: UInt16 = 0x2C07
+    public static let partnerAddress: UInt16 = 0x2C81
+}
+
 /// Anything the speaker sends on the notify characteristic.
 public enum Incoming: Equatable, Sendable {
     case legacy(Frame)

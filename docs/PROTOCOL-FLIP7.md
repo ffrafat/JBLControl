@@ -87,5 +87,5 @@ battery `94` = charging, 20%.
 
 ## Not yet mapped
 
-Playtime Boost, feedback tones, Auracast, auto standby. Next step: capture JBL Portable on an iPhone with
-Apple's Bluetooth logging profile + PacketLogger while toggling each one, then diff the `AA 12` tokens above.
+Playtime Boost, feedback tones, auto standby. Auracast and the stereo channel are documented in
+[PROTOCOL-GO4.md](PROTOCOL-GO4.md); they use `AA 6A` (link mode) and `AA 15 03 00 46 …` (channel).

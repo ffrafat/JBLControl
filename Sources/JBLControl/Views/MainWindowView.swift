@@ -214,6 +214,10 @@ private struct DetailsSection: View {
             .padding(16)
             .adaptiveGlass(.regular, in: .rect(cornerRadius: 18))
 
+            if speaker.supportsAuracast {
+                AuracastCard()
+            }
+
             HStack(spacing: 8) {
                 Button("Refresh", systemImage: "arrow.clockwise") { speaker.refresh() }
                 Button(copied ? "Copied" : "Copy Diagnostics", systemImage: copied ? "checkmark" : "stethoscope") {
@@ -262,6 +266,110 @@ private struct DetailsSection: View {
         case .waitingForOutput: "Waiting: choose this speaker as your Mac's sound output (Control Center → Sound)."
         case .off: "Stops the speaker's auto power-off while it's your Mac's sound output."
         }
+    }
+}
+
+/// The Auracast card: the link mode plus this unit's half of the stereo pair.
+///
+/// It drives the same two commands JBL's app uses: `AA 6A` for the broadcast mode and
+/// `AA 15 03 00 46 <0|1|2>` for left/right. It cannot create the pair by itself: two Go 4s
+/// join on the speakers (press Auracast on both), then each unit is assigned its half here.
+private struct AuracastCard: View {
+    @Environment(SpeakerManager.self) private var speaker
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: "antenna.radiowaves.left.and.right")
+                    .foregroundStyle(Theme.accent)
+                Text("Auracast")
+                    .font(.headline)
+                Spacer()
+                if speaker.isAuracastOn, let role = speaker.role {
+                    Text(role.label)
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.secondary)
+                }
+                Toggle("Auracast", isOn: Binding(get: { speaker.isAuracastOn },
+                                                 set: { speaker.setAuracast($0) }))
+                    .toggleStyle(.switch)
+                    .labelsHidden()
+                    .disabled(!speaker.canWrite)
+            }
+
+            if speaker.model?.stereoIsAutomatic == true {
+                Text("Left and right are set by AirTouch: bump the two speakers together. "
+                    + "This unit reports \(speaker.stereoChannel?.label.lowercased() ?? "no channel").")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else if speaker.canSetChannel {
+                Picker("Channel", selection: Binding(get: { speaker.stereoChannel ?? .mono },
+                                                     set: { speaker.setChannel($0) })) {
+                    ForEach(AudioChannel.allCases, id: \.self) { channel in
+                        Text(channel.label).tag(channel)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .disabled(!speaker.canWrite)
+
+                HStack(spacing: 8) {
+                    Text(channelDetail)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 8)
+                    if let other = speaker.otherUnit {
+                        Button("Connect to the other " + (speaker.model?.shortName ?? "speaker")) {
+                            speaker.choose(other)
+                        }
+                        .font(.caption.weight(.semibold))
+                        .adaptiveGlassButtonStyle()
+                        .controlSize(.small)
+                    }
+                    Button("Swap") { speaker.swapChannel() }
+                        .font(.caption.weight(.semibold))
+                        .adaptiveGlassButtonStyle()
+                        .controlSize(.small)
+                        .disabled((speaker.stereoChannel ?? .mono) == .mono || !speaker.canWrite)
+                }
+            } else {
+                Text("This speaker doesn't expose a stereo channel control.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Text(hint)
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(16)
+        .adaptiveGlass(.regular, in: .rect(cornerRadius: 18))
+    }
+
+    private var channelDetail: String {
+        switch speaker.stereoChannel {
+        case .left, .right:
+            return "This unit plays the \(speaker.stereoChannel?.label.lowercased() ?? "") channel. Set the other unit to the opposite one."
+        default:
+            return "Mono: both units play the same mix. Set one unit to Left and the other to Right for stereo."
+        }
+    }
+
+    private var hint: String {
+        if !speaker.canWrite {
+            return "Auracast changes are off for this model until someone confirms them on the speaker. Enable experimental controls in Settings."
+        }
+        if !speaker.isAuracastOn {
+            return "Turn Auracast on for both speakers. The unit connected to this Mac broadcasts; press Auracast on the other so it receives."
+        }
+        if speaker.auracastGroup?.isStereo == true {
+            let id = speaker.auracastGroup?.groupIDHex.map { " (\($0))" } ?? ""
+            return "Stereo group\(id) is active. Left and right are split across the two units."
+        }
+        return "Pairing happens on the speakers: press Auracast on the second unit and wait for it to join, then choose this unit's channel."
     }
 }
 

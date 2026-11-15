@@ -36,10 +36,22 @@ public enum Command : byte
     Info = 0x12,
     RequestVersion = 0x41,
     Version = 0x42,
+    /// <summary><c>AA 15</c> — set one device-info token (channel, stereo lock, …).</summary>
+    SetDeviceInfo = 0x15,
+    /// <summary><c>AA 17</c> — role check, answered by <c>AA 16</c>.</summary>
+    RequestLinkRole = 0x17,
+    LinkRole = 0x16,
     NotifyEqChange = 0x64,
+    /// <summary><c>AA 6A</c> / <c>AA 6B</c> — PartyBoost / Auracast link mode and the role it produces.</summary>
+    SetLinkMode = 0x6A,
+    LinkMode = 0x6B,
     SetAdvancedEq = 0x97,
     RequestAdvancedEq = 0x98,
     AdvancedEq = 0x99,
+    /// <summary><c>AA A0</c> / <c>AA A1</c> / <c>AA A2</c> — Auracast stereo/party group.</summary>
+    SetAuracastGroup = 0xA0,
+    RequestAuracastGroup = 0xA1,
+    AuracastGroup = 0xA2,
     Unsupported = 0xEE,
 }
 
@@ -156,9 +168,19 @@ public abstract record InfoToken
     /// <summary>Percentage in the low 7 bits; the high bit is set while charging (Flip 7: 0x8A = charging, 10%).</summary>
     public sealed record Battery(int Level, bool Charging) : InfoToken;
 
-    public sealed record AudioChannel(byte Value) : InfoToken;
+    /// <summary>Token 46: this unit's half of a stereo pair.</summary>
+    public sealed record Channel(AudioChannel Value) : InfoToken;
 
     public sealed record AudioSourceConnected(bool Value) : InfoToken;
+
+    /// <summary>Token 49: the stereo half is locked so it survives a power cycle.</summary>
+    public sealed record StereoLock(bool Value) : InfoToken;
+
+    /// <summary>Token 4C: the model reports Auracast support.</summary>
+    public sealed record AuracastSupport(bool Value) : InfoToken;
+
+    /// <summary>Token 45: how many units the speaker believes are linked.</summary>
+    public sealed record LinkedDevices(int Count) : InfoToken;
 
     public sealed record Firmware(string Value) : InfoToken;
 
@@ -197,8 +219,12 @@ public abstract record InfoToken
             (0x42, >= 2) => new ProductId((ushort)((value[0] << 8) | value[1])),
             (0x43, >= 1) => new Color(value[0]),
             (0x44, >= 1) => new Battery(value[0] & 0x7F, (value[0] & 0x80) != 0),
-            (0x46, >= 1) => new AudioChannel(value[0]),
+            (0x45, >= 1) => new LinkedDevices(value[0]),
+            (0x46, >= 1) when value[0] <= 2 => new Channel((AudioChannel)value[0]),
+            (0x46, >= 1) => new Other(token, value),
             (0x47, >= 1) => new AudioSourceConnected(value[0] != 0),
+            (0x49, >= 1) => new StereoLock(value[0] != 0),
+            (0x4C, >= 1) => new AuracastSupport(value[0] != 0),
             (0x4D, >= 1) => new Firmware(FirmwareVersion.Format(value)),
             _ => new Other(token, value),
         };
@@ -207,6 +233,16 @@ public abstract record InfoToken
 
 public static class FirmwareVersion
 {
-    /// <summary><c>00 07 02 00</c> → "0.7.2.0"</summary>
-    public static string Format(byte[] bytes) => string.Join(".", bytes);
+    /// <summary>
+    /// <c>00 07 02 00</c> → "0.7.2.0", and the ASCII form the Go 4 sends,
+    /// <c>30 36 34 30</c> ("0640") → "0.6.4.0".
+    /// </summary>
+    public static string Format(byte[] bytes)
+    {
+        if (bytes.Length > 0 && bytes.All(b => b is >= 0x30 and <= 0x39))
+        {
+            return string.Join(".", bytes.Select(b => ((char)b).ToString()));
+        }
+        return string.Join(".", bytes);
+    }
 }
