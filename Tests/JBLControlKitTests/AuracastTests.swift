@@ -108,7 +108,7 @@ import Testing
     #expect(duo.hasAuracast)
     #expect(duo.stereoIsAutomatic)
     #expect(!duo.hasStereoChannel)
-    #expect(!duo.writesNeedOptIn)
+    #expect(duo.writesNeedOptIn)
 }
 
 @Test func simpleEQSignatureFrameMatchesApp() throws {

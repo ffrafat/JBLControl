@@ -51,8 +51,8 @@ or system tray (Windows). No phone, no JBL Portable app.
 
 | Status | Models |
 |---|---|
-| ✅ Verified | Flip 7, Charge 6, Charge 5, Go 4, Go 4 Duo |
-| 🟠 Beta | Xtreme 3, Xtreme 4, Clip 5, Tuner 3 |
+| ✅ Verified | Flip 7, Charge 6, Charge 5, Go 4 |
+| 🟠 Beta | Xtreme 3, Xtreme 4, Go 4 Duo, Clip 5, Tuner 3 |
 | 🟣 Experimental | Go 5, Grip, Xtreme 5, Boombox 2/3/4, Flip 6, Pulse 5, Flip/Charge Essential 3 SE, older models |
 
 Full list with product IDs: [docs/SUPPORTED_MODELS.md](docs/SUPPORTED_MODELS.md). Both apps share the same

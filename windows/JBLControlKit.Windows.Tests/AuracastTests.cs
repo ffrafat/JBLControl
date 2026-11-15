@@ -118,7 +118,7 @@ public class AuracastTests
         Assert.True(duo.HasAuracast);
         Assert.True(duo.StereoIsAutomatic);
         Assert.False(duo.HasStereoChannel);
-        Assert.False(duo.WritesNeedOptIn);
+        Assert.True(duo.WritesNeedOptIn);
     }
 
     [Fact]

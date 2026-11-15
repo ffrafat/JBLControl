@@ -39,10 +39,10 @@ def MULTI_LABEL(feat):
     return " · ".join(names) or "—"
 
 # Models whose wire format has been confirmed byte for byte on real hardware.
-# Flip 7 (this project), Charge 6 (openjbl), Charge 5 (issue #1), and the Go 4 family
-# (audit log: a C1 level write read back band for band on PID 20e4; the Duo is the same
-# Go 4 firmware, so it uses the identical encoder).
-VERIFIED = {"2107", "20e3", "2040", "20e4", "210a", "215c", "2181"}
+# Flip 7 (this project), Charge 6 (openjbl), Charge 5 (issue #1), and the Go 4
+# (audit log: a C1 level write read back band for band on PID 20e4). The Duo is the
+# same firmware but has not been captured, so it stays Beta.
+VERIFIED = {"2107", "20e3", "2040", "20e4", "210a"}
 # The models JBL's own app drives with its newer stereo flow (DeviceUtils.supportNewStereoFlow).
 NEW_STEREO_FLOW = {"20dc", "210a", "2107", "20e3"}
 # Protocol 4 models that take quantized 0E7F EQ instead of 0E02 parametric.
