@@ -110,6 +110,24 @@ TLVs are `token | length | value`:
   time; its `AuracastGroupRequest` frame builder covers that command for a future two-link
   pairing flow.
 
+## Hardware status (2026-11-15)
+
+Verified on a Go 4 (`20E4`, firmware `0.6.4.0`) over BLE:
+
+- Custom EQ: wrote a modified five-band curve, the `0x99` reply and a fresh `0x98` read both
+  matched, and the original curve was restored.
+- Presets: the `DefaultPresetEQPayload` frames for Signature, Chill and Vocal each switched the
+  active category (`AA 99 … 06/22/03 …`) and echoed the coefficients.
+- Channel: `AA 15 03 00 46 01/02/00` was ACKed (`AA 00 02 15 00`); token `0x46` still read
+  `00` outside a group, which is why the app trusts the ACK over a later token read.
+- Link mode: `AA 6A 01 02` answered `AA 16 01 01` (role master). The unit then stopped
+  answering new BLE control connections until it left broadcast mode. The speaker's Auracast
+  button is the way out if a link drops; JBLControl holds its own link, but a Mac cannot reopen
+  one while the unit is broadcasting.
+
+Not yet tested on hardware: a second Go 4, the actual left/right split, and the group
+`AA A0` / `AA A2` flow. That is the next step with two units.
+
 ## What a Mac cannot do
 
 - CoreBluetooth is GATT only. macOS has no LE Audio / ISO / BASS API, so JBLControl cannot be the

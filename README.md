@@ -66,7 +66,8 @@ Beta and experimental models read battery and EQ safely. Changing their EQ needs
 Flip 7 and others), the app shows an Auracast switch and, for the portable models, a **Left / Right / Mono**
 picker. The two speakers still pair on the hardware: press Auracast on the second one (or bump two Go 4 Duos
 together), then connect to each unit in turn and set its half. A Mac cannot be an Auracast source or receiver
-(no LE Audio API), so the app only sends the control frames.
+(no LE Audio API), so the app only sends the control frames. If a unit stops answering after it
+starts broadcasting, press its Auracast button once; the app may not be able to reopen the link.
 
 **Have a beta or experimental model?** Choose **Copy Diagnostics** (Mac: the ••• menu; Windows: right-click
 the tray icon) and paste it into a [device report](../../issues/new?template=device-report.yml). It only sends
