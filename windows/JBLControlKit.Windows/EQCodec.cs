@@ -61,12 +61,21 @@ public sealed class EQCodec
             case ProtocolFamily.LegacyParametric:
                 return new List<byte[]> { Frame.SetEq(preset.Category, preset.Bands).Encoded };
             case ProtocolFamily.LegacyLevels:
-                return new List<byte[]> { LevelsFrame(preset.Category, customGains).Encoded };
+                // Presets are biquad coefficients, not level values: the firmware
+                // ignores an AA 97 whose active byte is a preset but whose body is
+                // the level form (confirmed on a Go 4).
+                if (!Model.SupportsPresets || preset.Bands.Length == 0) return new List<byte[]>();
+                return new List<byte[]> { new Frame(0x97, PresetEQ.Payload(preset.Category, preset.Bands)).Encoded };
             case ProtocolFamily.Protocol4Parametric:
                 if (!P4EQ.CategoryMap.TryGetValue(preset.Category, out byte mapped) || preset.Bands.Length != 7)
                     return new List<byte[]>();
                 return P4Message.Set(new[] { (P4EQ.Parametric, P4EQ.ParametricValue(mapped, preset.Bands)) }).Packets;
-            default: // legacySimple, protocol4Quantized, infoOnly
+            case ProtocolFamily.LegacySimple:
+                // AA 6E 02 01 00: select JBL Signature and send no band values.
+                return preset.Category == 0x01
+                    ? new List<byte[]> { new Frame(0x6E, new byte[] { 0x01, 0x00 }).Encoded }
+                    : new List<byte[]>();
+            default: // protocol4Quantized, infoOnly
                 return new List<byte[]>();
         }
     }

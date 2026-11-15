@@ -1,6 +1,26 @@
 namespace JBLControlKit.Windows;
 
 /// <summary>
+/// Protocol 4's multi-speaker features (<c>DeviceFeature</c> in JBL's app).
+/// Protocol 4 models carry Auracast and the stereo channel as features instead
+/// of the legacy <c>AA 6A</c> / <c>AA 15</c> frames.
+/// </summary>
+public static class P4Party
+{
+    /// <summary>8196: 0 off, 1 on (only 0/1 here, unlike the legacy link mode's 0/1/2).</summary>
+    public const ushort AuracastMode = 0x2004;
+    public const ushort Status = 0x2C00;
+    public const ushort GroupType = 0x2C01;
+    public const ushort Connection = 0x2C02;
+    public const ushort Role = 0x2C03;
+    public const ushort Channel = 0x2C04;
+    public const ushort GroupName = 0x2C05;
+    public const ushort GroupID = 0x2C06;
+    public const ushort GroupAction = 0x2C07;
+    public const ushort PartnerAddress = 0x2C81;
+}
+
+/// <summary>
 /// "Protocol 4", the frame format of newer JBL speakers (Go 5, Grip, Xtreme 5, Boombox 4).
 /// From the JBL Portable app via openjbl; not yet confirmed on hardware.
 /// Ported from Sources/JBLControlKit/Protocol4.swift.

@@ -41,11 +41,20 @@ public struct EQCodec: Sendable {
         case .legacyParametric:
             return [Frame.setEQ(category: preset.category, bands: preset.bands).encoded]
         case .legacyLevels:
-            return [levelsFrame(active: preset.category, gains: customGains).encoded]
+            // Presets are biquad coefficients, not level values: the firmware
+            // ignores an AA 97 whose active byte is a preset but whose body is
+            // the level form (confirmed on a Go 4).
+            guard model.supportsPresets, !preset.bands.isEmpty else { return [] }
+            return [Frame(.setAdvancedEQ, PresetEQ.payload(category: preset.category, bands: preset.bands)).encoded]
         case .protocol4Parametric:
             guard let mapped = P4EQ.categoryMap[preset.category], preset.bands.count == 7 else { return [] }
             return P4Message.set([(P4EQ.parametric, P4EQ.parametricValue(category: mapped, bands: preset.bands))]).packets
-        case .legacySimple, .protocol4Quantized, .infoOnly:
+        case .legacySimple:
+            // `AA 6E 02 01 00`: select JBL Signature and send no band values, the
+            // frame JBL's app builds for SetSimpleEqCommand(category: 01, []).
+            guard preset.category == 0x01 else { return [] }
+            return [Frame(0x6E, [0x01, 0x00]).encoded]
+        case .protocol4Quantized, .infoOnly:
             return []
         }
     }

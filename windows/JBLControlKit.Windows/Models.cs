@@ -162,6 +162,35 @@ public sealed class EQBandSpec
     }
 }
 
+/// <summary>The multi-speaker capabilities the JBL app's model table declares.</summary>
+public sealed class ModelFeatures
+{
+    /// <summary><c>AURACAST_SUPPORT</c>: the unit can join or start an Auracast broadcast.</summary>
+    public bool Auracast { get; }
+
+    /// <summary><c>NON_PARTY_BOOST_SUPPORT</c> / <c>PARTYBOOST_BUTTON_SUPPORT</c>: the older PartyBoost link.</summary>
+    public bool PartyBoost { get; }
+
+    /// <summary><c>LONG_LASTING_STEREO</c>: the pair survives a power cycle.</summary>
+    public bool LongLastingStereo { get; }
+
+    /// <summary><c>AIR_TOUCH_STEREO</c>: the Duo picks its own halves when bumped together.</summary>
+    public bool AirTouchStereo { get; }
+
+    /// <summary>The models JBL's app drives with its newer stereo flow.</summary>
+    public bool NewStereoFlow { get; }
+
+    public ModelFeatures(bool auracast = false, bool partyBoost = false, bool longLastingStereo = false,
+        bool airTouchStereo = false, bool newStereoFlow = false)
+    {
+        Auracast = auracast;
+        PartyBoost = partyBoost;
+        LongLastingStereo = longLastingStereo;
+        AirTouchStereo = airTouchStereo;
+        NewStereoFlow = newStereoFlow;
+    }
+}
+
 public sealed class SpeakerModel
 {
     public ushort ProductId { get; }
@@ -171,10 +200,11 @@ public sealed class SpeakerModel
     public FormFactor FormFactor { get; }
     public EQPreset[] Presets { get; }
     public Dictionary<byte, SpeakerColor> Colors { get; }
+    public ModelFeatures Features { get; }
     public ushort Id => ProductId;
 
     public SpeakerModel(ushort productId, string name, ProtocolFamily family, SupportLevel support,
-        FormFactor formFactor, EQPreset[] presets, Dictionary<byte, SpeakerColor> colors)
+        FormFactor formFactor, EQPreset[] presets, Dictionary<byte, SpeakerColor> colors, ModelFeatures? features = null)
     {
         ProductId = productId;
         Name = name;
@@ -183,6 +213,7 @@ public sealed class SpeakerModel
         FormFactor = formFactor;
         Presets = presets;
         Colors = colors;
+        Features = features ?? new ModelFeatures();
     }
 
     public SpeakerColor Color(byte? code)
@@ -198,17 +229,43 @@ public sealed class SpeakerModel
     public byte CustomCategory => Family == ProtocolFamily.LegacyParametric ? (byte)0xC2 : (byte)0xC1;
 
     /// <summary>Presets the picker offers: the model's own, then Custom.</summary>
+    ///
+    /// <para>A 3-band (simple EQ) model has no preset table in the JBL app, but its
+    /// firmware still carries JBL Signature as category <c>01</c>; selecting it is
+    /// <c>AA 6E 02 01 00</c>, the same frame the app sends.</para>
     public List<EQPreset> PickerPresets
     {
         get
         {
             if (!HasEq) return new List<EQPreset>();
-            var list = new List<EQPreset>(Presets) { new(CustomCategory, "Custom", Array.Empty<EQBand>()) };
+            var custom = new EQPreset(CustomCategory, "Custom", Array.Empty<EQBand>());
+            if (!SupportsPresets) return new List<EQPreset> { custom };
+            var list = new List<EQPreset>(Presets);
+            if (Family == ProtocolFamily.LegacySimple && !list.Exists(p => p.Category == 0x01))
+            {
+                list.Insert(0, new EQPreset(0x01, "Signature", Array.Empty<EQBand>()));
+            }
+            list.Add(custom);
             return list;
         }
     }
 
     public bool HasEq => Family != ProtocolFamily.InfoOnly && Support != SupportLevel.Unsupported;
+
+    /// <summary>
+    /// Whether JBL's preset payload for this model is implemented.
+    /// Xtreme 4 uses a different (AKM) coefficient encoder that isn't ported yet.
+    /// </summary>
+    public bool SupportsPresets => !(Family == ProtocolFamily.LegacyLevels && ProductId == 0x20DC);
+
+    /// <summary>The unit can join or start an Auracast broadcast.</summary>
+    public bool HasAuracast => Features.Auracast;
+
+    /// <summary>Left/right can be chosen over the control channel (not on AirTouch models).</summary>
+    public bool HasStereoChannel => Features.Auracast && !Features.AirTouchStereo;
+
+    /// <summary>The two halves are chosen by AirTouch, not by an <c>AA 15</c> write.</summary>
+    public bool StereoIsAutomatic => Features.AirTouchStereo;
 
     /// <summary>Writes are allowed without opting in only where they have been confirmed on hardware.</summary>
     public bool WritesNeedOptIn => Support != SupportLevel.Verified;

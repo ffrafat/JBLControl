@@ -29,10 +29,22 @@ public enum Command: UInt8, Sendable {
     case requestToken = 0x13
     case requestVersion = 0x41
     case version = 0x42
+    /// `AA 15` — set one device-info token (channel, stereo lock, …).
+    case setDeviceInfo = 0x15
+    /// `AA 17` — role check, answered by `AA 16`.
+    case requestLinkRole = 0x17
+    case linkRole = 0x16
     case notifyEQChange = 0x64
+    /// `AA 6A` / `AA 6B` — PartyBoost / Auracast link mode and the role it produces.
+    case setLinkMode = 0x6A
+    case linkMode = 0x6B
     case setAdvancedEQ = 0x97
     case requestAdvancedEQ = 0x98
     case advancedEQ = 0x99
+    /// `AA A0` / `AA A1` / `AA A2` — Auracast stereo/party group.
+    case setAuracastGroup = 0xA0
+    case requestAuracastGroup = 0xA1
+    case auracastGroup = 0xA2
     case unsupported = 0xEE
 }
 
@@ -106,8 +118,15 @@ public enum InfoToken: Equatable, Sendable {
     case color(UInt8)
     /// Percentage in the low 7 bits; the high bit is set while charging (Flip 7: `0x8A` = charging, 10%).
     case battery(level: Int, charging: Bool)
-    case audioChannel(UInt8)
+    /// Token 46: this unit's half of a stereo pair (0 none, 1 left, 2 right).
+    case audioChannel(AudioChannel)
     case audioSourceConnected(Bool)
+    /// Token 49: the stereo half is locked (JBL's "stereo preference").
+    case stereoLock(Bool)
+    /// Token 4C: the model reports Auracast support.
+    case auracastSupport(Bool)
+    /// Token 45: how many units the speaker believes are linked.
+    case linkedDevices(Int)
     /// Token 3C: 1 while the speaker is in Auracast / Play Together mode, 0 when it isn't.
     case auracast(UInt8)
     case firmware(String)
@@ -130,8 +149,11 @@ public enum InfoToken: Equatable, Sendable {
         case (0x42, 2...): return .productID(UInt16(value[0]) << 8 | UInt16(value[1]))
         case (0x43, 1...): return .color(value[0])
         case (0x44, 1...): return .battery(level: Int(value[0] & 0x7F), charging: value[0] & 0x80 != 0)
-        case (0x46, 1...): return .audioChannel(value[0])
+        case (0x45, 1...): return .linkedDevices(Int(value[0]))
+        case (0x46, 1...): return AudioChannel(channel: value[0]).map { .audioChannel($0) }
         case (0x47, 1...): return .audioSourceConnected(value[0] != 0)
+        case (0x49, 1...): return .stereoLock(value[0] != 0)
+        case (0x4C, 1...): return .auracastSupport(value[0] != 0)
         case (0x3C, 1...): return .auracast(value[0])
         case (0x4D, 1...): return .firmware(FirmwareVersion.format(value))
         default: return .other(token: token, value: value)
@@ -146,8 +168,13 @@ public enum InfoTokenID {
     public static let productID: UInt8 = 0x42
     public static let color: UInt8 = 0x43
     public static let battery: UInt8 = 0x44
+    public static let linkedDevices: UInt8 = 0x45
     public static let audioChannel: UInt8 = 0x46
     public static let audioSourceConnected: UInt8 = 0x47
+    /// Set through `AA 15 03 00 49 <0|1>`.
+    public static let stereoLock: UInt8 = 0x49
+    /// Reported by models that can join an Auracast broadcast.
+    public static let auracastSupport: UInt8 = 0x4C
     public static let firmware: UInt8 = 0x4D
 }
 
@@ -156,24 +183,16 @@ public extension Frame {
     static func requestToken(_ token: UInt8) -> Frame {
         Frame(.requestToken, [0x00, token])
     }
-
-    /// AA 13 | 00 | token | length | value… — sets one token.
-    ///
-    /// JBL's app builds the Auracast switch as AA 13 04 00 3C 01 01 (on) / …01 00 (off), and answers with
-    /// a DEV_ACK (AA 00 02 13 00 = accepted).
-    static func setToken(_ token: UInt8, _ value: [UInt8]) -> Frame {
-        Frame(.requestToken, [0x00, token, UInt8(value.count)] + value)
-    }
-
-    /// The Auracast / Play Together switch.
-    static func setAuracast(_ on: Bool) -> Frame {
-        setToken(InfoTokenID.auracast, [on ? 0x01 : 0x00])
-    }
 }
 
 public enum FirmwareVersion {
-    /// `00 07 02 00` → "0.7.2.0"
+    /// `00 07 02 00` → "0.7.2.0", and the ASCII form the Go 4 sends,
+    /// `30 36 34 30` ("0640") → "0.6.4.0".
     public static func format(_ bytes: [UInt8]) -> String {
-        bytes.map(String.init).joined(separator: ".")
+        let asciiDigits = (UInt8(0x30)...UInt8(0x39))
+        if !bytes.isEmpty, bytes.allSatisfy(asciiDigits.contains) {
+            return bytes.map { String(UnicodeScalar($0)) }.joined(separator: ".")
+        }
+        return bytes.map(String.init).joined(separator: ".")
     }
 }

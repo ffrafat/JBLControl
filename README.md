@@ -34,6 +34,7 @@ or system tray (Windows). No phone, no JBL Portable app.
 - 🔄 Auto-reconnects, even though JBL speakers rotate their Bluetooth address
 - 🖼️ The speaker's photo in its actual color, built in for 17 models
 - 🔀 One-click switching when several JBL speakers are nearby
+- 🔗 Auracast and stereo pairing: flip a speaker's broadcast on, and choose which half of the pair it plays
 - 🔊 Volume and mute, while the speaker is your computer's sound output
 - ☕ Keep Awake: stops the speaker's auto power-off while your computer is playing to it (JBL has no setting for this)
 - ⚙️ Settings: launch at login, low-battery alerts, update checks
@@ -50,8 +51,8 @@ or system tray (Windows). No phone, no JBL Portable app.
 
 | Status | Models |
 |---|---|
-| ✅ Verified | Flip 7, Charge 6, Charge 5 |
-| 🟠 Beta | Xtreme 3, Xtreme 4, Go 4, Go 4 Duo, Clip 5, Tuner 3 |
+| ✅ Verified | Flip 7, Charge 6, Charge 5, Go 4, Go 4 Duo |
+| 🟠 Beta | Xtreme 3, Xtreme 4, Clip 5, Tuner 3 |
 | 🟣 Experimental | Go 5, Grip, Xtreme 5, Boombox 2/3/4, Flip 6, Pulse 5, Flip/Charge Essential 3 SE, older models |
 
 Full list with product IDs: [docs/SUPPORTED_MODELS.md](docs/SUPPORTED_MODELS.md). Both apps share the same
@@ -60,6 +61,12 @@ on Windows.
 
 Beta and experimental models read battery and EQ safely. Changing their EQ needs **Allow experimental EQ**
 (Settings, on both) until someone with that speaker confirms it works.
+
+**Auracast:** on models JBL lists as Auracast-capable (the Go 4, Xtreme 4/5, Boombox 3/4, Clip 5, Charge 6,
+Flip 7 and others), the app shows an Auracast switch and, for the portable models, a **Left / Right / Mono**
+picker. The two speakers still pair on the hardware: press Auracast on the second one (or bump two Go 4 Duos
+together), then connect to each unit in turn and set its half. A Mac cannot be an Auracast source or receiver
+(no LE Audio API), so the app only sends the control frames.
 
 **Have a beta or experimental model?** Choose **Copy Diagnostics** (Mac: the ••• menu; Windows: right-click
 the tray icon) and paste it into a [device report](../../issues/new?template=device-report.yml). It only sends

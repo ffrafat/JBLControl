@@ -94,6 +94,10 @@ struct SpeakerControls: View {
             } else if speaker.status == .connected {
                 NoEQNotice()
             }
+            if connected, let model = speaker.model, model.hasAuracast {
+                AuracastControls()
+                    .transition(.opacity)
+            }
             if connected, let model = speaker.model, model.hasEQ, !speaker.canWrite {
                 ExperimentalNotice(model: model)
                     .transition(.opacity)
@@ -223,15 +227,33 @@ enum MoreMenu {
         awake.toolTip = "Stops the speaker's auto power-off while it's your Mac's sound output."
         menu.addItem(awake)
         if speaker.supportsAuracast {
-            let auracast = ActionItem("Auracast Broadcast", symbol: "antenna.radiowaves.left.and.right") {
-                speaker.setAuracast(!(speaker.auracast ?? false))
+            let auracast = ActionItem(speaker.isAuracastOn ? "Turn Auracast Off" : "Turn Auracast On",
+                                      symbol: "antenna.radiowaves.left.and.right") {
+                speaker.setAuracast(!speaker.isAuracastOn)
             }
-            auracast.state = speaker.auracast == true ? .on : .off
+            auracast.state = speaker.isAuracastOn ? .on : .off
             auracast.isEnabled = speaker.canWrite
             auracast.toolTip = speaker.canWrite
                 ? "Switch this speaker's Auracast broadcast on or off (the pair itself is made on the speakers)."
                 : "Enable experimental controls in Settings first."
             menu.addItem(auracast)
+            if speaker.canSetChannel {
+                let channelItem = NSMenuItem(title: "Stereo Channel", action: nil, keyEquivalent: "")
+                channelItem.image = NSImage(systemSymbolName: "speaker.wave.2", accessibilityDescription: nil)
+                let submenu = NSMenu()
+                for channel in AudioChannel.allCases {
+                    let item = ActionItem(channel.label, symbol: nil) { speaker.setChannel(channel) }
+                    item.state = speaker.stereoChannel == channel ? .on : .off
+                    item.isEnabled = speaker.canWrite
+                    submenu.addItem(item)
+                }
+                submenu.addItem(.separator())
+                let swap = ActionItem("Swap Left and Right", symbol: nil) { speaker.swapChannel() }
+                swap.isEnabled = (speaker.stereoChannel ?? .mono) != .mono && speaker.canWrite
+                submenu.addItem(swap)
+                channelItem.submenu = submenu
+                menu.addItem(channelItem)
+            }
         }
         menu.addItem(.separator())
         menu.addItem(ActionItem("Settings…", symbol: "gearshape", key: ",") { open(.settings) })
