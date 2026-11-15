@@ -25,6 +25,8 @@ public enum Command: UInt8, Sendable {
     case devAck = 0x00
     case requestInfo = 0x11
     case info = 0x12
+    /// Ask for one info token (AA 13 02 00 <token>); with a length and value, sets it.
+    case requestToken = 0x13
     case requestVersion = 0x41
     case version = 0x42
     case notifyEQChange = 0x64
@@ -106,6 +108,8 @@ public enum InfoToken: Equatable, Sendable {
     case battery(level: Int, charging: Bool)
     case audioChannel(UInt8)
     case audioSourceConnected(Bool)
+    /// Token 3C: 1 while the speaker is in Auracast / Play Together mode, 0 when it isn't.
+    case auracast(UInt8)
     case firmware(String)
     case other(token: UInt8, value: [UInt8])
 
@@ -128,9 +132,42 @@ public enum InfoToken: Equatable, Sendable {
         case (0x44, 1...): return .battery(level: Int(value[0] & 0x7F), charging: value[0] & 0x80 != 0)
         case (0x46, 1...): return .audioChannel(value[0])
         case (0x47, 1...): return .audioSourceConnected(value[0] != 0)
+        case (0x3C, 1...): return .auracast(value[0])
         case (0x4D, 1...): return .firmware(FirmwareVersion.format(value))
         default: return .other(token: token, value: value)
         }
+    }
+}
+
+/// Info-token ids used by the 0x11 / 0x12 / 0x13 commands.
+public enum InfoTokenID {
+    /// 3C — Auracast / Play Together mode: 1 on, 0 off.
+    public static let auracast: UInt8 = 0x3C
+    public static let productID: UInt8 = 0x42
+    public static let color: UInt8 = 0x43
+    public static let battery: UInt8 = 0x44
+    public static let audioChannel: UInt8 = 0x46
+    public static let audioSourceConnected: UInt8 = 0x47
+    public static let firmware: UInt8 = 0x4D
+}
+
+public extension Frame {
+    /// AA 13 | 00 | token — asks for a single info token, the shape JBL's app calls a token request.
+    static func requestToken(_ token: UInt8) -> Frame {
+        Frame(.requestToken, [0x00, token])
+    }
+
+    /// AA 13 | 00 | token | length | value… — sets one token.
+    ///
+    /// JBL's app builds the Auracast switch as AA 13 04 00 3C 01 01 (on) / …01 00 (off), and answers with
+    /// a DEV_ACK (AA 00 02 13 00 = accepted).
+    static func setToken(_ token: UInt8, _ value: [UInt8]) -> Frame {
+        Frame(.requestToken, [0x00, token, UInt8(value.count)] + value)
+    }
+
+    /// The Auracast / Play Together switch.
+    static func setAuracast(_ on: Bool) -> Frame {
+        setToken(InfoTokenID.auracast, [on ? 0x01 : 0x00])
     }
 }
 

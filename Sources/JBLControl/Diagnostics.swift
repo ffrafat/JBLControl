@@ -35,6 +35,13 @@ enum Diagnostics {
             lines.append("\(s.model?.name ?? "unknown") pid=\(s.productID.map { String(format: "%04X", $0) } ?? "?") "
                 + s.advertisement.sorted { $0.key < $1.key }.map { "\($0.key)=\($0.value)" }.joined(separator: " "))
         }
+        if !speaker.infoTokens.isEmpty {
+            lines += ["", "### Device info tokens", "```"]
+            for (token, value) in speaker.infoTokens.sorted(by: { $0.key < $1.key }) {
+                lines.append(String(format: "%02X ", token) + Data(value).hex)
+            }
+            lines.append("```")
+        }
         lines += ["```", "", "### GATT", "```"] + speaker.gattSummary + ["```", "", "### Traffic (most recent last)", "```"]
 
         let start = speaker.traffic.first?.date ?? .now

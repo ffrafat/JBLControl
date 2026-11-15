@@ -135,8 +135,10 @@ public struct EQCodec: Sendable {
     }
 
     private func levelsFrame(active: UInt8, gains: [Float]) -> Frame {
-        var p: [UInt8] = [active, 0xC1, 0x06, UInt8(gains.count)]
-        for (i, g) in gains.enumerated() {
+        // The advanced-level firmware takes 1…7 bands; an empty list has to become a flat curve.
+        let levels = gains.isEmpty ? Array(repeating: 0, count: max(model.customBands.count, 1)) : gains
+        var p: [UInt8] = [active, 0xC1, 0x06, UInt8(levels.count)]
+        for (i, g) in levels.enumerated() {
             p += [UInt8(i + 1), UInt8(bitPattern: Int8(clamping: Int(g.rounded())))]
         }
         return Frame(.setAdvancedEQ, p)

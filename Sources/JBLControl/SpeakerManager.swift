@@ -37,6 +37,10 @@ final class SpeakerManager: NSObject {
     private(set) var isCharging = false
     private(set) var firmware: String?
     private(set) var eq: EQSnapshot?
+    /// Every info token the speaker has reported, raw: token id to value bytes.
+    private(set) var infoTokens: [UInt8: [UInt8]] = [:]
+    /// Token 3C: nil until the speaker reports it. true = Auracast / Play Together on.
+    private(set) var auracast: Bool?
     /// Last known custom curve; survives replies that don't carry it.
     private(set) var customGains: [Float] = []
     private(set) var traffic: [TrafficEntry] = []
@@ -49,6 +53,8 @@ final class SpeakerManager: NSObject {
     var activePreset: EQPreset? { eq.flatMap { e in model?.pickerPresets.first { $0.category == e.activeCategory } } }
     var isCustomActive: Bool { eq != nil && eq?.activeCategory == model?.customCategory }
     var canWrite: Bool { model.map { !$0.writesNeedOptIn || allowExperimentalWrites } ?? false }
+    /// Whether this speaker told us it has the Auracast / Play Together switch.
+    var supportsAuracast: Bool { auracast != nil }
     var connectedID: UUID? { status == .connected ? peripheral?.identifier : nil }
     /// Advertised name of the speaker currently being connected to.
     var connectingName: String? { discovered.first { $0.id == peripheral?.identifier }?.name }
@@ -131,7 +137,25 @@ final class SpeakerManager: NSObject {
 
     func refresh() {
         guard status == .connected else { return }
-        enqueue([Frame.requestInfo.encoded] + (codec?.readRequests() ?? []))
+        enqueue([Frame.requestInfo.encoded] + tokenRequests + (codec?.readRequests() ?? []))
+    }
+
+    /// Tokens we ask for by name: the info burst does not always include them.
+    private var tokenRequests: [Data] { [Frame.requestToken(InfoTokenID.auracast).encoded] }
+
+    /// Turn the speaker's Auracast / Play Together broadcast on or off.
+    ///
+    /// This is the same frame JBL's app sends (AA 13 04 00 3C 01 01 / 00). It flips the mode, it does not
+    /// pair two speakers: the pair itself is made on the speakers (Auracast button, or AirTouch on the Duo).
+    func setAuracast(_ on: Bool) {
+        guard status == .connected, canWrite else { return }
+        auracast = on
+        enqueue([Frame.setAuracast(on).encoded])
+    }
+
+    /// Ask the speaker to re-send one info token (read-only).
+    func readToken(_ token: UInt8) {
+        enqueue([Frame.requestToken(token).encoded])
     }
 
     func select(_ preset: EQPreset) {
@@ -251,6 +275,7 @@ final class SpeakerManager: NSObject {
     /// Forget what the last speaker reported, so none of it shows for whichever speaker connects next.
     private func clearDeviceInfo() {
         name = nil; colorCode = nil; battery = nil; isCharging = false; firmware = nil; eq = nil
+        infoTokens = [:]; auracast = nil
     }
 
     private func clearDeviceState() {
@@ -334,12 +359,16 @@ final class SpeakerManager: NSObject {
         switch Command(rawValue: frame.command) {
         case .info:
             guard let token = InfoToken.parse(frame.payload) else { return }
+            if frame.payload.count >= 3, frame.payload[1] != 0x48, frame.payload[1] != 0xC2 {
+                infoTokens[frame.payload[1]] = Array(frame.payload.dropFirst(2))
+            }
             switch token {
             case .name(let n): name = n
             case .productID(let pid): setProductID(pid)
             case .color(let c): colorCode = c
             case .battery(let level, let charging): batteryChanged(level, charging: charging)
             case .firmware(let f): firmware = f
+            case .auracast(let value): auracast = value != 0
             default: break
             }
         case .version:
@@ -541,7 +570,7 @@ extension SpeakerManager: @preconcurrency CBPeripheralDelegate {
         log.info("control channel ready")
         decoder = MessageDecoder()
         status = .connected
-        enqueue([Frame.requestInfo.encoded, Frame.requestVersion.encoded] + (codec?.readRequests() ?? []))
+        enqueue([Frame.requestInfo.encoded, Frame.requestVersion.encoded] + tokenRequests + (codec?.readRequests() ?? []))
         startPolling()
     }
 

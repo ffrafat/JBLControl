@@ -214,6 +214,10 @@ private struct DetailsSection: View {
             .padding(16)
             .adaptiveGlass(.regular, in: .rect(cornerRadius: 18))
 
+            if speaker.supportsAuracast {
+                AuracastRow()
+            }
+
             HStack(spacing: 8) {
                 Button("Refresh", systemImage: "arrow.clockwise") { speaker.refresh() }
                 Button(copied ? "Copied" : "Copy Diagnostics", systemImage: copied ? "checkmark" : "stethoscope") {
@@ -262,6 +266,45 @@ private struct DetailsSection: View {
         case .waitingForOutput: "Waiting: choose this speaker as your Mac's sound output (Control Center → Sound)."
         case .off: "Stops the speaker's auto power-off while it's your Mac's sound output."
         }
+    }
+}
+
+/// The Auracast / Play Together switch. Shown once the speaker reports token 3C.
+///
+/// It flips the speaker's broadcast mode; it does not create the pair. Two Go 4s are paired on the
+/// speakers themselves (the Auracast button on both, or AirTouch on the Duo), and left/right is chosen
+/// there: JBL publishes no control-channel command for it.
+private struct AuracastRow: View {
+    @Environment(SpeakerManager.self) private var speaker
+
+    var body: some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Auracast broadcast")
+                Text(detail)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 8)
+            Toggle("Auracast broadcast", isOn: Binding(get: { speaker.auracast ?? false },
+                                                       set: { speaker.setAuracast($0) }))
+                .toggleStyle(.switch)
+                .labelsHidden()
+                .disabled(!speaker.canWrite)
+        }
+        .padding(16)
+        .adaptiveGlass(.regular, in: .rect(cornerRadius: 18))
+    }
+
+    private var detail: String {
+        if !speaker.canWrite {
+            return "Enable experimental controls in Settings to switch this."
+        }
+        if speaker.auracast == true {
+            return "On: a second JBL Auracast speaker can join this one."
+        }
+        return "Off. Pair the two on the speakers themselves: press Auracast on both, or bump two Duos together."
     }
 }
 

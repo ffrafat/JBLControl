@@ -78,14 +78,18 @@ struct EqualizerView: View {
 
     /// Models not yet confirmed on hardware need an explicit opt-in before EQ writes.
     @ViewBuilder private var experimentalPrompt: some View {
-        if speaker.eq != nil, !speaker.canWrite, let model = speaker.model {
+        if !speaker.canWrite, let model = speaker.model {
             Button("Enable experimental EQ for \(model.shortName)") {
                 speaker.allowExperimentalWrites = true
             }
-            .help("EQ changes on this model use JBL's protocol but haven't been tested on hardware yet.")
+            .help("EQ changes on this model use JBL's protocol but haven't been confirmed on hardware yet.")
             .font(.caption.weight(.medium))
             .adaptiveGlassButtonStyle()
             .controlSize(.small)
+        } else if speaker.eq == nil, speaker.status == .connected {
+            Text("Waiting for the speaker to report its EQ…")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
     }
 }
